@@ -8,6 +8,9 @@ import com.authentication.auth_app_backend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +19,7 @@ public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
 
     @Override
+    @Transactional
     public UserDto createUser(UserDto userDto) {
         if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email is required");
@@ -27,6 +31,7 @@ public class UserServiceImpl implements UserService {
 
         User user = modelMapper.map(userDto, User.class);
         user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
+        user.setCreatedAt(new Date());
 
         User savedUser = userRepository.save(user);
 
@@ -54,7 +59,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Iterable<UserDto> getAllUsers() {
-        return null;
+      return userRepository.findAll().stream()
+              .map(user -> modelMapper.map(user, UserDto.class))
+              .toList();
     }
 }

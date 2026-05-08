@@ -21,7 +21,7 @@ public class User {
   private String image;
   private String enable;
   private Date createdAt;
-  private String updatedAt;
+  private Date updatedAt;
   private Provider provider;
   private String providerId;
   private Set<Role> roles;

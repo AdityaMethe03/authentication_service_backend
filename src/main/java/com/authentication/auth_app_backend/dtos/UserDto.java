@@ -1,9 +1,9 @@
 package com.authentication.auth_app_backend.dtos;
 
 import com.authentication.auth_app_backend.entities.enums.Provider;
-import java.time.Instant;
-import java.util.Set;
 import lombok.*;
+import java.util.Date;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,8 +17,8 @@ public class UserDto {
   private String password;
   private String image;
   private boolean enable;
-  private Instant createdAt;
-  private Instant updatedAt;
+  private Date createdAt;
+  private Date updatedAt;
   private Provider provider;
   private Set<RoleDto> roles;
 }
