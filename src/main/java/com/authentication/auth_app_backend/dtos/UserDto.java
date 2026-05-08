@@ -1,9 +1,9 @@
 package com.authentication.auth_app_backend.dtos;
 
 import com.authentication.auth_app_backend.entities.enums.Provider;
-import lombok.*;
 import java.util.Date;
 import java.util.Set;
+import lombok.*;
 
 @Getter
 @Setter
