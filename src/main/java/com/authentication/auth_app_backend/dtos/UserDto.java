@@ -1,11 +1,9 @@
 package com.authentication.auth_app_backend.dtos;
 
 import com.authentication.auth_app_backend.entities.enums.Provider;
-import lombok.*;
-
 import java.time.Instant;
 import java.util.Set;
-import java.util.UUID;
+import lombok.*;
 
 @Getter
 @Setter
@@ -13,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 public class UserDto {
-  private UUID id;
+  private String id;
   private String email;
   private String name;
   private String password;
