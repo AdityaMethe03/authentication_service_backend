@@ -28,14 +28,14 @@ public class User implements UserDetails {
   private Date updatedAt;
   private Provider provider;
   private String providerId;
-  private Set<Role> roles;
+  private Set<String> roles;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     if (this.roles == null || this.roles.isEmpty()) {
       return java.util.List.of();
     }
-    return roles.stream().map(role -> new SimpleGrantedAuthority(role.getRole())).toList();
+    return roles.stream().map(SimpleGrantedAuthority::new).toList();
   }
 
   @Override

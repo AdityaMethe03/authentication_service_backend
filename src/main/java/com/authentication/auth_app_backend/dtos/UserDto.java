@@ -20,5 +20,5 @@ public class UserDto {
   private Date createdAt;
   private Date updatedAt;
   private Provider provider;
-  private Set<RoleDto> roles;
+  private Set<String> roles;
 }

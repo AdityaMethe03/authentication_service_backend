@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         user.getRoles() == null
                             ? List.of()
                             : user.getRoles().stream()
-                                .map(role -> new SimpleGrantedAuthority(role.getRole()))
+                                .map(SimpleGrantedAuthority::new)
                                 .collect(Collectors.toList());
 
                     var auth =

@@ -1,11 +1,14 @@
 package com.authentication.auth_app_backend.services.impl;
 
+import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.dtos.UserDto;
 import com.authentication.auth_app_backend.entities.User;
 import com.authentication.auth_app_backend.entities.enums.Provider;
+import com.authentication.auth_app_backend.repositories.RoleRepository;
 import com.authentication.auth_app_backend.repositories.UserRepository;
 import com.authentication.auth_app_backend.services.UserService;
 import java.util.Date;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
+  private final RoleRepository roleRepository;
 
   @Override
   @Transactional
@@ -31,6 +35,41 @@ public class UserServiceImpl implements UserService {
     User user = modelMapper.map(userDto, User.class);
     user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
     user.setCreatedAt(new Date());
+    user.setUpdatedAt(null);
+
+    if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
+      if (!userDto.getRoles().contains(AppConstants.GUEST_ROLE)
+          && !userDto.getRoles().contains(AppConstants.ADMIN_ROLE)) {
+        user.getRoles().add("ROLE_" + AppConstants.GUEST_ROLE);
+      }
+
+      userDto
+          .getRoles()
+          .forEach(
+              role -> {
+                roleRepository
+                    .findByName(role)
+                    .ifPresentOrElse(
+                        roleDb -> {
+                          user.setRoles(Set.of(roleDb.getName()));
+                        },
+                        () -> {
+                          throw new IllegalArgumentException(
+                              "Role with given name does not exist.");
+                        });
+              });
+    } else {
+      roleRepository
+          .findByName("ROLE_" + AppConstants.GUEST_ROLE)
+          .ifPresentOrElse(
+              roleDb -> {
+                user.setRoles(Set.of(roleDb.getName()));
+              },
+              () -> {
+                throw new IllegalArgumentException(
+                    "Role " + AppConstants.GUEST_ROLE + " does not exist.");
+              });
+    }
 
     User savedUser = userRepository.save(user);
 

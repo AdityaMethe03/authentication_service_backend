@@ -1,6 +1,5 @@
 package com.authentication.auth_app_backend.security;
 
-import com.authentication.auth_app_backend.entities.Role;
 import com.authentication.auth_app_backend.entities.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -39,8 +38,7 @@ public class JwtService {
   }
 
   public String generateAccessToken(User user) {
-    List<String> roles =
-        user.getRoles() == null ? List.of() : user.getRoles().stream().map(Role::getRole).toList();
+    List<String> roles = user.getRoles() == null ? List.of() : user.getRoles().stream().toList();
 
     return Jwts.builder()
         .id(UUID.randomUUID().toString())
