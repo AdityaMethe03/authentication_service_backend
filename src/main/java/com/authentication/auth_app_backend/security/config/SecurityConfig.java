@@ -2,6 +2,7 @@ package com.authentication.auth_app_backend.security.config;
 
 import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.dtos.ApiError;
+import com.authentication.auth_app_backend.entities.enums.UserRole;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Arrays;
@@ -33,6 +34,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final ObjectMapper objectMapper;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,9 +46,9 @@ public class SecurityConfig {
                 auth.requestMatchers(AppConstants.AUTH_PUBLIC_URLS)
                     .permitAll()
                     .requestMatchers(HttpMethod.GET)
-                    .hasRole(AppConstants.GUEST_ROLE)
+                    .hasAnyAuthority(UserRole.ALl())
                     .requestMatchers("/api/v1/users/**")
-                    .hasRole(AppConstants.ADMIN_ROLE)
+                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
                     .anyRequest()
                     .authenticated())
         .logout(AbstractHttpConfigurer::disable)
@@ -65,7 +67,6 @@ public class SecurityConfig {
                                   "Unauthorized Access!",
                                   message,
                                   request.getRequestURI());
-                          var objectMapper = new ObjectMapper();
                           response.getWriter().write(objectMapper.writeValueAsString(apiError));
                         })
                     .accessDeniedHandler(
@@ -84,7 +85,6 @@ public class SecurityConfig {
                                   message,
                                   request.getRequestURI(),
                                   true);
-                          var objectMapper = new ObjectMapper();
                           response.getWriter().write(objectMapper.writeValueAsString(apiError));
                         })))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

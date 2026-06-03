@@ -1,7 +1,7 @@
 package com.authentication.auth_app_backend;
 
-import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.entities.Role;
+import com.authentication.auth_app_backend.entities.enums.UserRole;
 import com.authentication.auth_app_backend.repositories.RoleRepository;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class AuthAppBackendApplication implements CommandLineRunner {
   @Override
   public void run(String... args) throws Exception {
     roleRepository
-        .findByName("ROLE_" + AppConstants.SUDO_ADMIN_ROLE)
+        .findByName(UserRole.SUDO_ADMIN.name())
         .ifPresentOrElse(
             (role) -> {
               System.out.println(role.getName() + " role already exists.");
@@ -29,12 +29,12 @@ public class AuthAppBackendApplication implements CommandLineRunner {
             () -> {
               Role role = new Role();
               role.setId(UUID.randomUUID().toString());
-              role.setName("ROLE_" + AppConstants.SUDO_ADMIN_ROLE);
+              role.setName(UserRole.SUDO_ADMIN.name());
               roleRepository.save(role);
             });
 
     roleRepository
-        .findByName("ROLE_" + AppConstants.ADMIN_ROLE)
+        .findByName(UserRole.ADMIN.name())
         .ifPresentOrElse(
             (role) -> {
               System.out.println(role.getName() + " role already exists.");
@@ -42,12 +42,12 @@ public class AuthAppBackendApplication implements CommandLineRunner {
             () -> {
               Role role = new Role();
               role.setId(UUID.randomUUID().toString());
-              role.setName("ROLE_" + AppConstants.ADMIN_ROLE);
+              role.setName(UserRole.ADMIN.name());
               roleRepository.save(role);
             });
 
     roleRepository
-        .findByName("ROLE_" + AppConstants.GUEST_ROLE)
+        .findByName(UserRole.GUEST.name())
         .ifPresentOrElse(
             (role) -> {
               System.out.println(role.getName() + " role already exists.");
@@ -55,7 +55,7 @@ public class AuthAppBackendApplication implements CommandLineRunner {
             () -> {
               Role role = new Role();
               role.setId(UUID.randomUUID().toString());
-              role.setName("ROLE_" + AppConstants.GUEST_ROLE);
+              role.setName(UserRole.GUEST.name());
               roleRepository.save(role);
             });
   }

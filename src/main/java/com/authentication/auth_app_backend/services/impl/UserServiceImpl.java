@@ -1,9 +1,9 @@
 package com.authentication.auth_app_backend.services.impl;
 
-import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.dtos.UserDto;
 import com.authentication.auth_app_backend.entities.User;
 import com.authentication.auth_app_backend.entities.enums.Provider;
+import com.authentication.auth_app_backend.entities.enums.UserRole;
 import com.authentication.auth_app_backend.repositories.RoleRepository;
 import com.authentication.auth_app_backend.repositories.UserRepository;
 import com.authentication.auth_app_backend.services.UserService;
@@ -38,9 +38,9 @@ public class UserServiceImpl implements UserService {
     user.setUpdatedAt(null);
 
     if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
-      if (!userDto.getRoles().contains(AppConstants.GUEST_ROLE)
-          && !userDto.getRoles().contains(AppConstants.ADMIN_ROLE)) {
-        user.getRoles().add("ROLE_" + AppConstants.GUEST_ROLE);
+      if (!userDto.getRoles().contains(UserRole.GUEST.name())
+          && !userDto.getRoles().contains(UserRole.ADMIN.name())) {
+        user.getRoles().add(UserRole.GUEST.name());
       }
 
       userDto
@@ -60,14 +60,13 @@ public class UserServiceImpl implements UserService {
               });
     } else {
       roleRepository
-          .findByName("ROLE_" + AppConstants.GUEST_ROLE)
+          .findByName(UserRole.GUEST.name())
           .ifPresentOrElse(
               roleDb -> {
                 user.setRoles(Set.of(roleDb.getName()));
               },
               () -> {
-                throw new IllegalArgumentException(
-                    "Role " + AppConstants.GUEST_ROLE + " does not exist.");
+                throw new IllegalArgumentException(UserRole.GUEST.name() + " role does not exist.");
               });
     }
 

@@ -15,8 +15,4 @@ public class AppConstants {
     "/swagger-ui.html",
     "/swagger-ui/**"
   };
-
-  public static final String SUDO_ADMIN_ROLE = "SUDO_ADMIN";
-  public static final String ADMIN_ROLE = "ADMIN";
-  public static final String GUEST_ROLE = "GUEST";
 }
