@@ -13,9 +13,6 @@ update user
 delete user
 get user by id
 
-ROLE apis:
-register update lookupAll lookupById 
-
 rate limiting—account lockout on failed attempts—scheduler to lock and unlock accounts.
 Basic-level (7.5) Production-level (10)
 ───────────────────────────────────────────

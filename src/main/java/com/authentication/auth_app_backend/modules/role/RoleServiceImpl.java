@@ -39,7 +39,7 @@ public class RoleServiceImpl implements RoleService {
 
     Role existingRole =
         roleRepository
-            .findById(roleDto.getName())
+            .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
     existingRole.setName(roleDto.getName());
     existingRole.setStatus(roleDto.getStatus());

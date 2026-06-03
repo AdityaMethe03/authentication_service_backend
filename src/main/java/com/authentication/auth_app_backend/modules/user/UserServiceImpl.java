@@ -1,5 +1,6 @@
 package com.authentication.auth_app_backend.modules.user;
 
+import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
@@ -77,20 +78,46 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public UserDto getUserByEmail(String email) {
-    return null;
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("User with given email does not exist."));
+    return modelMapper.map(user, UserDto.class);
   }
 
   @Override
-  public UserDto updateUser(UserDto user, String userId) {
-    return null;
+  public UserDto updateUser(UserDto userDto, String userId) {
+    User existingUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    existingUser.setName(userDto.getName());
+    existingUser.setProvider(userDto.getProvider());
+    existingUser.setStatus(userDto.getStatus());
+    existingUser.setUpdatedAt(new Date());
+
+    User user = userRepository.save(existingUser);
+
+    return modelMapper.map(user, UserDto.class);
   }
 
   @Override
-  public void deleteUser(String userId) {}
+  public void deleteUser(String userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    userRepository.delete(user);
+  }
 
   @Override
   public UserDto getUserById(String userId) {
-    return null;
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    return modelMapper.map(user, UserDto.class);
   }
 
   @Override
