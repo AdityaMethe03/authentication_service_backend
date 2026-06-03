@@ -1,6 +1,6 @@
 package com.authentication.auth_app_backend.security;
 
-import com.authentication.auth_app_backend.entities.User;
+import com.authentication.auth_app_backend.modules.user.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;

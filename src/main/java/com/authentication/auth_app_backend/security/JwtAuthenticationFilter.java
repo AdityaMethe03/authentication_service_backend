@@ -1,6 +1,6 @@
 package com.authentication.auth_app_backend.security;
 
-import com.authentication.auth_app_backend.repositories.UserRepository;
+import com.authentication.auth_app_backend.modules.user.UserRepository;
 import io.jsonwebtoken.*;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;

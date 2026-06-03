@@ -1,10 +1,10 @@
 package com.authentication.auth_app_backend.security;
 
-import com.authentication.auth_app_backend.entities.RefreshToken;
-import com.authentication.auth_app_backend.entities.User;
-import com.authentication.auth_app_backend.entities.enums.Provider;
-import com.authentication.auth_app_backend.repositories.RefreshTokenRepository;
-import com.authentication.auth_app_backend.repositories.UserRepository;
+import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToken;
+import com.authentication.auth_app_backend.modules.user.User;
+import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
+import com.authentication.auth_app_backend.modules.user.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

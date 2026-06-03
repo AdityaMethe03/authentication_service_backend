@@ -1,6 +1,6 @@
 package com.authentication.auth_app_backend.security;
 
-import com.authentication.auth_app_backend.repositories.UserRepository;
+import com.authentication.auth_app_backend.modules.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.*;

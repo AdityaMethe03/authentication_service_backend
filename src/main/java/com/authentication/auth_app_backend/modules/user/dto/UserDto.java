@@ -1,0 +1,24 @@
+package com.authentication.auth_app_backend.modules.user.dto;
+
+import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import java.util.Date;
+import java.util.Set;
+import lombok.*;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class UserDto {
+  private String id;
+  private String email;
+  private String name;
+  private String password;
+  private String image;
+  private boolean enable;
+  private Date createdAt;
+  private Date updatedAt;
+  private Provider provider;
+  private Set<String> roles;
+}
