@@ -1,11 +1,11 @@
 package com.authentication.auth_app_backend.core;
 
 import com.authentication.auth_app_backend.modules.role.Role;
-import com.authentication.auth_app_backend.modules.user.User;
-import com.authentication.auth_app_backend.modules.user.enums.Provider;
-import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
+import com.authentication.auth_app_backend.modules.role.enums.UserRole;
+import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
+import com.authentication.auth_app_backend.modules.user.enums.Provider;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;

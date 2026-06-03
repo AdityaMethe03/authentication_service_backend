@@ -5,7 +5,7 @@ Tech stack: Java, Spring boot, Mongodb
 TODO:
 APIs:
 
-restructure folder
+restructure folder : DONE
 
 USER api:
 update user

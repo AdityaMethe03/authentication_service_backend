@@ -1,10 +1,9 @@
 package com.authentication.auth_app_backend.modules.user;
 
+import com.authentication.auth_app_backend.modules.role.RoleRepository;
+import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
-import com.authentication.auth_app_backend.modules.role.enums.UserRole;
-import com.authentication.auth_app_backend.modules.role.RoleRepository;
-
 import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;

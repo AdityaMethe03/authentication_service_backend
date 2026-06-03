@@ -1,7 +1,7 @@
 package com.authentication.auth_app_backend.security.config;
 
-import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.common.dtos.ApiError;
+import com.authentication.auth_app_backend.config.AppConstants;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;

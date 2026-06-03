@@ -1,7 +1,7 @@
 package com.authentication.auth_app_backend.modules.auth;
 
-import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import com.authentication.auth_app_backend.modules.user.UserService;
+import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
