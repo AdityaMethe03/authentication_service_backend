@@ -122,7 +122,7 @@ public class AuthController {
     }
 
     String jti = jwtService.getJti(refreshToken);
-    UUID userId = jwtService.getUserId(refreshToken);
+    String userId = jwtService.getUserId(refreshToken);
     RefreshToken storedRefreshToken =
         refreshTokenRepository
             .findByJti(jti)

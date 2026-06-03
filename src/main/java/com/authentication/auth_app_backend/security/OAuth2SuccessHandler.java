@@ -74,8 +74,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                 .enable(true)
                 .provider(Provider.GOOGLE)
                 .providerId(googleId)
-                    .roles(Set.of(UserRole.GUEST.name()))
-                    .status(UserStatusEnum.ACTIVE)
+                .roles(Set.of(UserRole.GUEST.name()))
+                .status(UserStatusEnum.ACTIVE)
                 .build();
 
         user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(newUser));
