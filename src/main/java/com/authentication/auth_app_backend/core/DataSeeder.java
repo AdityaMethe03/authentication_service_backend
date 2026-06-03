@@ -2,6 +2,7 @@ package com.authentication.auth_app_backend.core;
 
 import com.authentication.auth_app_backend.modules.role.Role;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
+import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
@@ -56,6 +57,8 @@ public class DataSeeder implements ApplicationRunner {
               Role role = new Role();
               role.setId(UUID.randomUUID().toString());
               role.setName(roleName);
+              role.setStatus(RoleStatusEnum.ACTIVE);
+              role.setCreatedAt(new Date());
               roleRepository.save(role);
               log.info("{} role created.", roleName);
             });
