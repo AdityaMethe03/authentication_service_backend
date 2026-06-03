@@ -14,7 +14,6 @@ delete user
 get user by id
 
 ROLE apis:
-add status createdOn fields
 register update lookupAll lookupById 
 
 rate limiting—account lockout on failed attempts—scheduler to lock and unlock accounts.

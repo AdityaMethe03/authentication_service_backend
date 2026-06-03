@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
                     .findByName(role)
                     .ifPresentOrElse(
                         roleDb -> {
-                          user.setRoles(Set.of(roleDb.getName()));
+                          user.getRoles().add(roleDb.getName());
                         },
                         () -> {
                           throw new IllegalArgumentException(

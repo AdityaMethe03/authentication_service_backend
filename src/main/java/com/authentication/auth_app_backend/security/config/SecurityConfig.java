@@ -49,6 +49,8 @@ public class SecurityConfig {
                     .hasAnyAuthority(UserRole.ALl())
                     .requestMatchers("/api/v1/users/**")
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
+                    .requestMatchers("/api/v1/role/**")
+                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
                     .anyRequest()
                     .authenticated())
         .logout(AbstractHttpConfigurer::disable)
