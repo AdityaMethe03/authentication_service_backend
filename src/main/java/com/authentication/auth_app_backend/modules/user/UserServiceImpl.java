@@ -4,6 +4,7 @@ import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundExc
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
 import java.util.Date;
 import java.util.Set;
@@ -23,7 +24,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   @Transactional
-  public UserDto createUser(UserDto userDto) {
+  public UserResponseDto createUser(UserDto userDto) {
     if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
       throw new IllegalArgumentException("Email is required");
     }
@@ -73,21 +74,21 @@ public class UserServiceImpl implements UserService {
 
     User savedUser = userRepository.save(user);
 
-    return modelMapper.map(savedUser, UserDto.class);
+    return modelMapper.map(savedUser, UserResponseDto.class);
   }
 
   @Override
-  public UserDto getUserByEmail(String email) {
+  public UserResponseDto getUserByEmail(String email) {
     User user =
         userRepository
             .findByEmail(email)
             .orElseThrow(
                 () -> new ResourceNotFoundException("User with given email does not exist."));
-    return modelMapper.map(user, UserDto.class);
+    return modelMapper.map(user, UserResponseDto.class);
   }
 
   @Override
-  public UserDto updateUser(UserDto userDto, String userId) {
+  public UserResponseDto updateUser(UserDto userDto, String userId) {
     User existingUser =
         userRepository
             .findById(userId)
@@ -99,7 +100,7 @@ public class UserServiceImpl implements UserService {
 
     User user = userRepository.save(existingUser);
 
-    return modelMapper.map(user, UserDto.class);
+    return modelMapper.map(user, UserResponseDto.class);
   }
 
   @Override
@@ -112,19 +113,19 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserDto getUserById(String userId) {
+  public UserResponseDto getUserById(String userId) {
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
-    return modelMapper.map(user, UserDto.class);
+    return modelMapper.map(user, UserResponseDto.class);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public Iterable<UserDto> getAllUsers() {
+  public Iterable<UserResponseDto> getAllUsers() {
     return userRepository.findAll().stream()
-        .map(user -> modelMapper.map(user, UserDto.class))
+        .map(user -> modelMapper.map(user, UserResponseDto.class))
         .toList();
   }
 }

@@ -8,6 +8,7 @@ import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToke
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.security.CookieService;
 import com.authentication.auth_app_backend.security.JwtService;
 import io.jsonwebtoken.JwtException;
@@ -90,7 +91,7 @@ public class AuthController {
             accessToken,
             refreshToken,
             jwtService.getAccessTtlSeconds(),
-            modelMapper.map(user, UserDto.class));
+            modelMapper.map(user, UserResponseDto.class));
     return ResponseEntity.ok(tokenResponse);
   }
 
@@ -168,7 +169,7 @@ public class AuthController {
             newAccessToken,
             newRefreshToken,
             jwtService.getAccessTtlSeconds(),
-            modelMapper.map(storedUser, UserDto.class)));
+            modelMapper.map(storedUser, UserResponseDto.class)));
   }
 
   @PostMapping("/logout")
@@ -243,7 +244,7 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public ResponseEntity<UserDto> registerUser(@RequestBody UserDto userDto) {
+  public ResponseEntity<UserResponseDto> registerUser(@RequestBody UserDto userDto) {
     userDto.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(userDto));
   }
