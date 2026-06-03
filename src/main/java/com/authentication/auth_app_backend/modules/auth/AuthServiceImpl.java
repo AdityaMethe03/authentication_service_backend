@@ -15,11 +15,6 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public UserDto registerUser(UserDto userDto) {
-
-    // logic
-    // verifying email or password etc.
-    // default role
-    userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
     return userService.createUser(userDto);
   }
 }

@@ -3,15 +3,8 @@ Authentication Application
 Tech stack: Java, Spring boot, Mongodb
 
 TODO:
-APIs:
 
-restructure folder : DONE
-
-USER api:
-add status field
-update user
-delete user
-get user by id
+delete user and role - permission to sudo admin only
 
 rate limiting—account lockout on failed attempts—scheduler to lock and unlock accounts.
 Basic-level (7.5) Production-level (10)
