@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
@@ -29,6 +30,7 @@ public class User implements UserDetails {
   private Provider provider;
   private String providerId;
   private Set<String> roles;
+  private UserStatusEnum status;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {

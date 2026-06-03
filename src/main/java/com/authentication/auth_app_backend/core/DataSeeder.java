@@ -6,6 +6,7 @@ import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -75,6 +76,7 @@ public class DataSeeder implements ApplicationRunner {
                       .enable(true)
                       .provider(Provider.LOCAL)
                       .roles(Set.of(UserRole.SUDO_ADMIN.name()))
+                      .status(UserStatusEnum.ACTIVE)
                       .createdAt(new Date())
                       .build();
               userRepository.save(user);

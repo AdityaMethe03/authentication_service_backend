@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
   private final RoleRepository roleRepository;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
   @Transactional
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
     }
 
     User user = modelMapper.map(userDto, User.class);
+    user.setPassword(passwordEncoder.encode(userDto.getPassword()));
     user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
     user.setCreatedAt(new Date());
     user.setUpdatedAt(null);

@@ -244,6 +244,7 @@ public class AuthController {
 
   @PostMapping("/register")
   public ResponseEntity<UserDto> registerUser(@RequestBody UserDto userDto) {
+    userDto.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(userDto));
   }
 }

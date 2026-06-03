@@ -13,17 +13,18 @@ import org.springframework.web.bind.annotation.*;
 @Tags(@Tag(name = "V1 User"))
 @AllArgsConstructor
 @CrossOrigin
+@RequestMapping("/api/v1/users")
 public class UserController {
 
   private final UserService userService;
 
-  @PostMapping(value = "/api/v1/user/register")
+  @PostMapping(value = "/register")
   public ResponseEntity<UserDto> createUser(@RequestBody UserDto user) {
     user.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(user));
   }
 
-  @GetMapping(value = "/api/v1/user/lookup/search/all")
+  @GetMapping(value = "/lookup/search/all")
   public ResponseEntity<Iterable<UserDto>> getAllUsers() {
     return ResponseEntity.ok(userService.getAllUsers());
   }

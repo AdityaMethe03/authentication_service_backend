@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user.dto;
 
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
 import java.util.Set;
 import lombok.*;
@@ -21,4 +22,5 @@ public class UserDto {
   private Date updatedAt;
   private Provider provider;
   private Set<String> roles;
+  private UserStatusEnum status;
 }
