@@ -119,6 +119,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
     String jti = UUID.randomUUID().toString();
     RefreshToken refreshTokenOb =
         RefreshToken.builder()
+            .id(UUID.randomUUID().toString())
             .jti(jti)
             .userId(user.getId())
             .revoked(false)

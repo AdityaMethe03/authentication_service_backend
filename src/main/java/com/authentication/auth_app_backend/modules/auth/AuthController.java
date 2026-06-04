@@ -67,6 +67,7 @@ public class AuthController {
 
     var refreshTokenOb =
         RefreshToken.builder() // refresh token object
+            .id(UUID.randomUUID().toString())
             .jti(jti)
             .userId(user.getId())
             .createdAt(new Date())
@@ -149,6 +150,7 @@ public class AuthController {
 
     var newRefreshTokenOb =
         RefreshToken.builder()
+            .id(UUID.randomUUID().toString())
             .jti(newJti)
             .userId(storedUser.getId())
             .createdAt(new Date())
