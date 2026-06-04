@@ -50,10 +50,10 @@ public class SecurityConfig {
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
                     .requestMatchers("/api/v1/users/register")
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
+                    .requestMatchers("/api/v1/role/**")
+                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
                     //  SUDO ADMIN + ADMIN
                     .requestMatchers("/api/v1/users/**")
-                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
-                    .requestMatchers("/api/v1/role/**")
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
                     // SUDO ADMIN + ADMIN + GUEST
                     .requestMatchers(HttpMethod.GET)
