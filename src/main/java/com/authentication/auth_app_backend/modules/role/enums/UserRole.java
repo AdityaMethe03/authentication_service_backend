@@ -7,7 +7,7 @@ public enum UserRole {
   ADMIN,
   GUEST;
 
-  public static String[] ALl() {
+  public static String[] ALL() {
     return Arrays.stream(values()).map(Enum::name).toArray(String[]::new);
   }
 }

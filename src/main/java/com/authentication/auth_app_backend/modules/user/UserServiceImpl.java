@@ -95,6 +95,7 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
     existingUser.setName(userDto.getName());
     existingUser.setProvider(userDto.getProvider());
+    existingUser.setEnable(userDto.isEnable());
     existingUser.setStatus(userDto.getStatus());
     existingUser.setUpdatedAt(new Date());
 

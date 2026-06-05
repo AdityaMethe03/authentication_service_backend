@@ -4,12 +4,11 @@ Tech stack: Java, Spring boot, Mongodb
 
 TODO:
 
-1. delete user and role - permission to sudo admin only
+1. remove delete role api and change status to deleted. and if role deleted then that role will not be added to any user.
+    do something with user that already have the role.
 
 2. password reset or forgot password
 
-3. Expired refresh tokens accumulate forever. The refresh_tokens collection has no TTL index. Revoked and expired records pile up indefinitely, bloating MongoDB.
- 
 5. Revoke all sessions endpoint. No way for a user to invalidate all their active refresh tokens at once (e.g. "sign out everywhere").
 
 rate limiting—account lockout on failed attempts—scheduler to lock and unlock accounts.
