@@ -4,6 +4,7 @@ import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundExc
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
 import java.util.Date;
@@ -36,6 +37,7 @@ public class UserServiceImpl implements UserService {
     User user = modelMapper.map(userDto, User.class);
     user.setPassword(passwordEncoder.encode(userDto.getPassword()));
     user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
+    user.setEnable(true);
     user.setCreatedAt(new Date());
     user.setUpdatedAt(null);
 
@@ -128,5 +130,18 @@ public class UserServiceImpl implements UserService {
     return userRepository.findAll().stream()
         .map(user -> modelMapper.map(user, UserResponseDto.class))
         .toList();
+  }
+
+  @Override
+  public UserResponseDto updateUserProfile(UserProfileDto user, String userId) {
+    User existingUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    existingUser.setName(user.getName());
+    existingUser.setImage(user.getImage());
+    existingUser.setUpdatedAt(new Date());
+
+    return modelMapper.map(userRepository.save(existingUser), UserResponseDto.class);
   }
 }

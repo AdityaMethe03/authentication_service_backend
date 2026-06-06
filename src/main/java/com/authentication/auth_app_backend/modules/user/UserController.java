@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
@@ -19,23 +20,33 @@ public class UserController {
 
   private final UserService userService;
 
+  /***  Register apis ***/
   @PostMapping(value = "/register")
   public ResponseEntity<UserResponseDto> createUser(@RequestBody UserDto user) {
     user.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(user));
   }
 
+  /***  Update apis ***/
   @PutMapping(value = "/update/{userId}")
   public ResponseEntity<UserResponseDto> updateUser(
       @RequestBody UserDto user, @PathVariable String userId) {
     return ResponseEntity.ok(userService.updateUser(user, userId));
   }
 
+  @PutMapping(value = "/update/profile/{userId}")
+  public ResponseEntity<UserResponseDto> updateUserProfile(
+      @RequestBody UserProfileDto user, @PathVariable String userId) {
+    return ResponseEntity.ok(userService.updateUserProfile(user, userId));
+  }
+
+  /***  Delete apis ***/
   @DeleteMapping(value = "/delete/{userId}")
   public void deleteUser(@PathVariable String userId) {
     userService.deleteUser(userId);
   }
 
+  /***  Get apis  ***/
   @GetMapping(value = "/lookup/search/{userId}")
   public ResponseEntity<UserResponseDto> getUserById(@PathVariable String userId) {
     return ResponseEntity.ok(userService.getUserById(userId));

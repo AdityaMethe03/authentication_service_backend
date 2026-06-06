@@ -45,17 +45,19 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(AppConstants.AUTH_PUBLIC_URLS)
                     .permitAll()
-                    //  SUDO ADMIN
-                    .requestMatchers(HttpMethod.DELETE)
-                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
+                    // SUDO ADMIN + ADMIN + GUEST
+                    .requestMatchers(HttpMethod.GET)
+                    .hasAnyAuthority(UserRole.ALL())
+                    .requestMatchers("/api/v1/users/update/profile/*")
+                    .hasAnyAuthority(UserRole.ALL())
                     //  SUDO ADMIN + ADMIN
                     .requestMatchers("/api/v1/users/**")
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
                     .requestMatchers("/api/v1/role/**")
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
-                    // SUDO ADMIN + ADMIN + GUEST
-                    .requestMatchers(HttpMethod.GET)
-                    .hasAnyAuthority(UserRole.ALL())
+                    //  SUDO ADMIN
+                    .requestMatchers(HttpMethod.DELETE)
+                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
                     .anyRequest()
                     .authenticated())
         .logout(AbstractHttpConfigurer::disable)
