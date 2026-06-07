@@ -2,7 +2,11 @@ package com.authentication.auth_app_backend.modules.role;
 
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
+import com.authentication.auth_app_backend.modules.role.enums.UserRole;
+import com.authentication.auth_app_backend.modules.user.User;
+import com.authentication.auth_app_backend.modules.user.UserRepository;
 import java.util.Date;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -13,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RoleServiceImpl implements RoleService {
   private final ModelMapper modelMapper;
   private final RoleRepository roleRepository;
+  private final UserRepository userRepository;
 
   @Override
   @Transactional
@@ -51,11 +56,23 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
+  @Transactional
   public void deleteRole(String roleId) {
     Role role =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    if (UserRole.SUDO_ADMIN.name().equals(role.getName())
+        || UserRole.ADMIN.name().equals(role.getName())
+        || UserRole.GUEST.name().equals(role.getName())) {
+      throw new IllegalArgumentException("Role with given name cannot be deleted.");
+    }
+
+    List<User> users = userRepository.findByRolesContaining(role.getName());
+    users.forEach(user -> user.getRoles().remove(role.getName()));
+    userRepository.saveAll(users);
+
     roleRepository.delete(role);
   }
 

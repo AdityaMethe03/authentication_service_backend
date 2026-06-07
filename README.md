@@ -4,6 +4,8 @@ Tech stack: Java, Spring boot, Mongodb
 
 TODO:
 
+check security config
+
 1. remove delete role api and change status to deleted. and if role deleted then that role will not be added to any user.
     do something with user that already have the role.
 
