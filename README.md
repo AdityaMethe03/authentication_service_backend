@@ -4,11 +4,6 @@ Tech stack: Java, Spring boot, Mongodb
 
 TODO:
 
-check security config
-
-1. remove delete role api and change status to deleted. and if role deleted then that role will not be added to any user.
-    do something with user that already have the role.
-
 2. password reset or forgot password
 
 5. Revoke all sessions endpoint. No way for a user to invalidate all their active refresh tokens at once (e.g. "sign out everywhere").

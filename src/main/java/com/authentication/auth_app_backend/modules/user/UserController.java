@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,12 @@ public class UserController {
   public ResponseEntity<UserResponseDto> updateUserProfile(
       @RequestBody UserProfileDto user, @PathVariable String userId) {
     return ResponseEntity.ok(userService.updateUserProfile(user, userId));
+  }
+
+  @PutMapping(value = "/update/password/{userId}")
+  public ResponseEntity<UserResponseDto> updateUserPassword(
+      @RequestBody UserPasswordDto user, @PathVariable String userId) {
+    return ResponseEntity.ok(userService.updateUserPassword(user, userId));
   }
 
   /***  Delete apis ***/

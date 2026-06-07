@@ -4,6 +4,7 @@ import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundExc
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
@@ -133,15 +134,35 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserResponseDto updateUserProfile(UserProfileDto user, String userId) {
+  public UserResponseDto updateUserProfile(UserProfileDto userDto, String userId) {
     User existingUser =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
-    existingUser.setName(user.getName());
-    existingUser.setImage(user.getImage());
+    existingUser.setName(userDto.getName());
+    existingUser.setImage(userDto.getImage());
     existingUser.setUpdatedAt(new Date());
 
-    return modelMapper.map(userRepository.save(existingUser), UserResponseDto.class);
+    User user = userRepository.save(existingUser);
+    return modelMapper.map(user, UserResponseDto.class);
+  }
+
+  @Override
+  public UserResponseDto updateUserPassword(UserPasswordDto userDto, String userId) {
+    User existingUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    if (userDto.getPassword().isBlank() || userDto.getPassword().isEmpty()) {
+      throw new IllegalArgumentException("Password is required");
+    }
+    if (!userDto.getPassword().equals(userDto.getConfirmPassword())) {
+      throw new IllegalArgumentException("Passwords do not match");
+    }
+    existingUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
+    existingUser.setUpdatedAt(new Date());
+
+    User user = userRepository.save(existingUser);
+    return modelMapper.map(user, UserResponseDto.class);
   }
 }

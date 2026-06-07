@@ -22,6 +22,7 @@ public class SecurityUrls {
     "/api/v1/users/update/profile/*",
     "/api/v1/users/lookup/search/*",
     "/api/v1/users/lookup/search/email/*",
+    "/api/v1/users/update/password/*",
   };
 
   public static final String[] ADMIN_URLS = {

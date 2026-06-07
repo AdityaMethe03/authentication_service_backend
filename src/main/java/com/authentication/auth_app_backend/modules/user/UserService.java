@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
+import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 
@@ -26,4 +27,6 @@ public interface UserService {
 
   // update user
   UserResponseDto updateUserProfile(UserProfileDto user, String userId);
+
+  UserResponseDto updateUserPassword(UserPasswordDto user, String userId);
 }
