@@ -1,7 +1,7 @@
 package com.authentication.auth_app_backend.security.config;
 
 import com.authentication.auth_app_backend.common.dtos.ApiError;
-import com.authentication.auth_app_backend.config.AppConstants;
+import com.authentication.auth_app_backend.config.SecurityUrls;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +11,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
@@ -43,21 +42,14 @@ public class SecurityConfig {
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(AppConstants.AUTH_PUBLIC_URLS)
+                auth.requestMatchers(SecurityUrls.AUTH_PUBLIC_URLS)
                     .permitAll()
-                    // SUDO ADMIN + ADMIN + GUEST
-                    .requestMatchers(HttpMethod.GET)
-                    .hasAnyAuthority(UserRole.ALL())
-                    .requestMatchers("/api/v1/users/update/profile/*")
-                    .hasAnyAuthority(UserRole.ALL())
-                    //  SUDO ADMIN + ADMIN
-                    .requestMatchers("/api/v1/users/**")
+                    .requestMatchers(SecurityUrls.SUDO_ADMIN_URLS)
+                    .hasAuthority(UserRole.SUDO_ADMIN.name())
+                    .requestMatchers(SecurityUrls.ADMIN_URLS)
                     .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
-                    .requestMatchers("/api/v1/role/**")
-                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
-                    //  SUDO ADMIN
-                    .requestMatchers(HttpMethod.DELETE)
-                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name())
+                    .requestMatchers(SecurityUrls.ALL_ROLES_URLS)
+                    .hasAnyAuthority(UserRole.ALL())
                     .anyRequest()
                     .authenticated())
         .logout(AbstractHttpConfigurer::disable)
