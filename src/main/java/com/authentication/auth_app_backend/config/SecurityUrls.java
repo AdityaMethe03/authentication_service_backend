@@ -23,6 +23,7 @@ public class SecurityUrls {
     "/api/v1/users/lookup/search/*",
     "/api/v1/users/lookup/search/email/*",
     "/api/v1/users/update/password/*",
+    "/api/v1/auth/logout/all",
   };
 
   public static final String[] ADMIN_URLS = {

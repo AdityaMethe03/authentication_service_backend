@@ -16,12 +16,11 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +48,8 @@ public class AuthController {
   private final JwtService jwtService;
   private final ModelMapper modelMapper;
   private final CookieService cookieService;
+
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   @PostMapping("/login")
   public ResponseEntity<TokenResponse> login(
@@ -249,5 +250,46 @@ public class AuthController {
   public ResponseEntity<UserResponseDto> registerUser(@RequestBody UserDto userDto) {
     userDto.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(userDto));
+  }
+
+  @PostMapping("/logout/all")
+  public ResponseEntity<Void> logoutAllSessions(
+      HttpServletRequest request, HttpServletResponse response) {
+    String userId =
+        readRefreshTokenFromRequest(null, request)
+            .map(
+                token -> {
+                  try {
+                    if (jwtService.isRefreshToken(token)) {
+                      String jti = jwtService.getJti(token);
+                      refreshTokenRepository
+                          .findByJti(jti)
+                          .ifPresent(
+                              rt -> {
+                                rt.setRevoked(true);
+                                refreshTokenRepository.save(rt);
+                              });
+                      return jwtService.getUserId(token); // Extract userId
+                    }
+                  } catch (JwtException ignored) {
+                  }
+                  return "";
+                })
+            .orElse("");
+
+    log.info("userId: " + userId);
+
+    if (userId.isBlank()) {
+      throw new IllegalArgumentException("User not identified.");
+    }
+
+    authService.revokeAllUserSessions(userId);
+
+    // Use CookieUtil (same behavior)
+    cookieService.clearRefreshCookie(response);
+    cookieService.addNoStoreHeaders(response);
+    SecurityContextHolder.clearContext();
+
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 }
