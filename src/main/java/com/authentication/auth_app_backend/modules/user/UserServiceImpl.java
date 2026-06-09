@@ -153,13 +153,17 @@ public class UserServiceImpl implements UserService {
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
-    if (userDto.getPassword().isBlank() || userDto.getPassword().isEmpty()) {
+    if (userDto.getOldPassword().isBlank() || userDto.getOldPassword().isEmpty()) {
       throw new IllegalArgumentException("Password is required");
     }
-    if (!userDto.getPassword().equals(userDto.getConfirmPassword())) {
-      throw new IllegalArgumentException("Passwords do not match");
+    if (!passwordEncoder.matches(userDto.getOldPassword(), existingUser.getPassword())) {
+      throw new IllegalArgumentException("Old password is incorrect");
     }
-    existingUser.setPassword(passwordEncoder.encode(userDto.getPassword()));
+    if (userDto.getOldPassword().equals(userDto.getNewPassword())) {
+      throw new IllegalArgumentException("New password cannot be same as old password");
+    }
+
+    existingUser.setPassword(passwordEncoder.encode(userDto.getNewPassword()));
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);
