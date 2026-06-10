@@ -4,6 +4,7 @@ import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
+import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
 import java.util.UUID;
@@ -45,6 +46,12 @@ public class UserController {
   public ResponseEntity<UserResponseDto> updateUserPassword(
       @RequestBody UserPasswordDto user, @PathVariable String userId) {
     return ResponseEntity.ok(userService.updateUserPassword(user, userId));
+  }
+
+  @PutMapping(value = "/update/status/{userId}")
+  public ResponseEntity<UserResponseDto> updateUserStatus(
+      @RequestBody String userId, @RequestParam UserStatusEnum status) {
+    return ResponseEntity.ok(userService.updateUserStatusById(status, userId));
   }
 
   /***  Delete apis ***/

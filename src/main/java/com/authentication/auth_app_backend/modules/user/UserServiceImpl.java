@@ -8,6 +8,7 @@ import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
+import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -164,6 +165,19 @@ public class UserServiceImpl implements UserService {
     }
 
     existingUser.setPassword(passwordEncoder.encode(userDto.getNewPassword()));
+    existingUser.setUpdatedAt(new Date());
+
+    User user = userRepository.save(existingUser);
+    return modelMapper.map(user, UserResponseDto.class);
+  }
+
+  @Override
+  public UserResponseDto updateUserStatusById(UserStatusEnum userStatus, String userId) {
+    User existingUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    existingUser.setStatus(userStatus);
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);

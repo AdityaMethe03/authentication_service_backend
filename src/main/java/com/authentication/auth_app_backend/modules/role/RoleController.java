@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.role;
 
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
+import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
 import java.util.UUID;
@@ -18,23 +19,33 @@ public class RoleController {
 
   private final RoleService roleService;
 
+  /***  Register apis ***/
   @PostMapping(value = "/register")
   public ResponseEntity<RoleDto> createRole(@RequestBody RoleDto role) {
     role.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(roleService.createRole(role));
   }
 
+  /***  Update apis ***/
   @PutMapping(value = "/update/{roleId}")
   public ResponseEntity<RoleDto> updateRole(
       @RequestBody RoleDto role, @PathVariable String roleId) {
     return ResponseEntity.ok(roleService.updateRole(role, roleId));
   }
 
+  @PutMapping(value = "/update/status/{roleId}")
+  public ResponseEntity<RoleDto> updateRoleStatus(
+      @RequestBody RoleStatusEnum status, @PathVariable String roleId) {
+    return ResponseEntity.ok(roleService.updateRoleStatusById(status, roleId));
+  }
+
+  /***  Delete apis ***/
   @DeleteMapping(value = "/delete/{roleId}")
   public void deleteRole(@PathVariable String roleId) {
     roleService.deleteRole(roleId);
   }
 
+  /***  Get apis  ***/
   @GetMapping(value = "/lookup/search/{roleId}")
   public ResponseEntity<RoleDto> getRoleById(@PathVariable String roleId) {
     return ResponseEntity.ok(roleService.getRoleById(roleId));

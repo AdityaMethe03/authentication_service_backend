@@ -2,6 +2,7 @@ package com.authentication.auth_app_backend.modules.role;
 
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
+import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
@@ -91,5 +92,24 @@ public class RoleServiceImpl implements RoleService {
     return roleRepository.findAll().stream()
         .map(role -> modelMapper.map(role, RoleDto.class))
         .toList();
+  }
+
+  @Override
+  public RoleDto updateRoleStatusById(RoleStatusEnum status, String roleId) {
+    Role existingRole =
+        roleRepository
+            .findById(roleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    if (UserRole.SUDO_ADMIN.name().equals(existingRole.getName())
+        || UserRole.ADMIN.name().equals(existingRole.getName())
+        || UserRole.GUEST.name().equals(existingRole.getName())) {
+      throw new IllegalArgumentException("Default role with given name cannot be updated.");
+    }
+
+    existingRole.setStatus(status);
+    existingRole.setUpdatedAt(new Date());
+    Role role = roleRepository.save(existingRole);
+    return modelMapper.map(role, RoleDto.class);
   }
 }

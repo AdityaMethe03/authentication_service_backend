@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.role;
 
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
+import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 
 public interface RoleService {
 
@@ -18,4 +19,6 @@ public interface RoleService {
 
   // get all roles
   Iterable<RoleDto> getAllRoles();
+
+  RoleDto updateRoleStatusById(RoleStatusEnum status, String roleId);
 }

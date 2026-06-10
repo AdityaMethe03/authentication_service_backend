@@ -31,7 +31,10 @@ public class SecurityUrls {
 
   public static final String[] ADMIN_URLS = {
     // user endpoints
-    "/api/v1/users/lookup/search/all", "/api/v1/users/register", "/api/v1/users/update/*",
+    "/api/v1/users/lookup/search/all",
+    "/api/v1/users/register",
+    "/api/v1/users/update/*",
+    "/api/v1/users/update/status/*",
   };
 
   public static final String[] SUDO_ADMIN_URLS = {
@@ -43,5 +46,6 @@ public class SecurityUrls {
     "/api/v1/role/update/*",
     "/api/v1/role/lookup/**",
     "/api/v1/role/delete/*",
+    "/api/v1/role//update/status/*",
   };
 }
