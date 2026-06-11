@@ -35,6 +35,7 @@ public class SecurityUrls {
     "/api/v1/users/register",
     "/api/v1/users/update/*",
     "/api/v1/users/update/status/*",
+    "/api/v1/users/register/admin",
   };
 
   public static final String[] SUDO_ADMIN_URLS = {

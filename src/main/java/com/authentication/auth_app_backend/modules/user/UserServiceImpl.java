@@ -1,12 +1,10 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
+import com.authentication.auth_app_backend.modules.role.Role;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
-import com.authentication.auth_app_backend.modules.user.dto.UserDto;
-import com.authentication.auth_app_backend.modules.user.dto.UserPasswordDto;
-import com.authentication.auth_app_backend.modules.user.dto.UserProfileDto;
-import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
+import com.authentication.auth_app_backend.modules.user.dto.*;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
 import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
@@ -182,5 +180,34 @@ public class UserServiceImpl implements UserService {
 
     User user = userRepository.save(existingUser);
     return modelMapper.map(user, UserResponseDto.class);
+  }
+
+  @Override
+  @Transactional
+  public UserResponseDto createAdminUser(UserAdminDto userDto) {
+    if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
+      throw new IllegalArgumentException("Email is required");
+    }
+
+    if (userRepository.existsByEmail(userDto.getEmail())) {
+      throw new IllegalArgumentException("User with given email already exists.");
+    }
+
+    Role role =
+        roleRepository
+            .findByName(UserRole.ADMIN.name())
+            .orElseThrow(() -> new ResourceNotFoundException("Admin role does not exist."));
+
+    User user = modelMapper.map(userDto, User.class);
+    user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+    user.setEnable(true);
+    user.setCreatedAt(new Date());
+    user.setUpdatedAt(null);
+    user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
+    user.setRoles(Set.of(role.getName()));
+
+    User savedUser = userRepository.save(user);
+
+    return modelMapper.map(savedUser, UserResponseDto.class);
   }
 }
