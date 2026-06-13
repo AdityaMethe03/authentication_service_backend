@@ -1,13 +1,14 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.dto.*;
-import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.tags.Tags;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -53,13 +54,15 @@ public class UserController {
 
   @PutMapping(value = "/update/status/{userId}")
   public ResponseEntity<UserResponseDto> updateUserStatus(
-      @RequestParam UserStatusEnum status, @PathVariable String userId) {
-    return ResponseEntity.ok(userService.updateUserStatusById(status, userId));
+      @RequestBody UserStatusUpdateDto userStatusUpdateDto, @PathVariable String userId) {
+    verifyUserAccess(userId);
+    return ResponseEntity.ok(userService.updateUserStatusById(userStatusUpdateDto, userId));
   }
 
   /***  Delete apis ***/
   @DeleteMapping(value = "/delete/{userId}")
   public void deleteUser(@PathVariable String userId) {
+    verifyUserAccess(userId);
     userService.deleteUser(userId);
   }
 
@@ -77,5 +80,23 @@ public class UserController {
   @GetMapping(value = "/lookup/search/all")
   public ResponseEntity<Iterable<UserResponseDto>> getAllUsers() {
     return ResponseEntity.ok(userService.getAllUsers());
+  }
+
+  /***  helpers ***/
+  private void verifyUserAccess(String targetUserId) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String currentUserEmail = auth.getName();
+
+    boolean isAdminOrSudo =
+        auth.getAuthorities().stream()
+            .anyMatch(
+                a -> a.getAuthority().equals("ADMIN") || a.getAuthority().equals("SUDO_ADMIN"));
+
+    if (!isAdminOrSudo) {
+      UserResponseDto targetUser = userService.getUserById(targetUserId);
+      if (!targetUser.getEmail().equals(currentUserEmail)) {
+        throw new IllegalArgumentException("Access Denied: You can only modify your own account.");
+      }
+    }
   }
 }

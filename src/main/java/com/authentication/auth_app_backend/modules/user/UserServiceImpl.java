@@ -6,7 +6,6 @@ import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.*;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
-import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -170,12 +169,13 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public UserResponseDto updateUserStatusById(UserStatusEnum userStatus, String userId) {
+  public UserResponseDto updateUserStatusById(
+      UserStatusUpdateDto userStatusUpdateDto, String userId) {
     User existingUser =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
-    existingUser.setStatus(userStatus);
+    existingUser.setStatus(userStatusUpdateDto.getStatus());
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);

@@ -1,7 +1,6 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.modules.user.dto.*;
-import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 
 public interface UserService {
 
@@ -28,7 +27,7 @@ public interface UserService {
 
   UserResponseDto updateUserPassword(UserPasswordDto user, String userId);
 
-  UserResponseDto updateUserStatusById(UserStatusEnum userStatus, String userId);
+  UserResponseDto updateUserStatusById(UserStatusUpdateDto userStatusUpdateDto, String userId);
 
   UserResponseDto createAdminUser(UserAdminDto user);
 }

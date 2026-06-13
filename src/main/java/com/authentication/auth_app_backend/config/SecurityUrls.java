@@ -21,6 +21,8 @@ public class SecurityUrls {
     // authentication endpoints
     "/api/v1/auth/logout",
     "/api/v1/auth/logout/all",
+    "/api/v1/users/delete/*",
+    "/api/v1/users/update/status/*",
 
     // user endpoints
     "/api/v1/users/update/profile/*",
@@ -34,14 +36,10 @@ public class SecurityUrls {
     "/api/v1/users/lookup/search/all",
     "/api/v1/users/register",
     "/api/v1/users/update/*",
-    "/api/v1/users/update/status/*",
     "/api/v1/users/register/admin",
   };
 
   public static final String[] SUDO_ADMIN_URLS = {
-    // user endpoints
-    "/api/v1/users/delete/*",
-
     // role endpoints
     "/api/v1/role/register",
     "/api/v1/role/update/*",
