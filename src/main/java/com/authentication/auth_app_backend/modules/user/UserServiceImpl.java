@@ -1,6 +1,7 @@
 package com.authentication.auth_app_backend.modules.user;
 
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
+import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
 import com.authentication.auth_app_backend.modules.role.Role;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final ModelMapper modelMapper;
+  private final UserResponseMapper userResponseMapper;
+  private final RefreshTokenRepository refreshTokenRepository;
   private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
 
@@ -39,6 +42,11 @@ public class UserServiceImpl implements UserService {
     user.setEnable(true);
     user.setCreatedAt(new Date());
     user.setUpdatedAt(null);
+
+    if (userDto.getRoles() != null && userDto.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
+      throw new IllegalArgumentException(
+          "Role " + UserRole.SUDO_ADMIN.name() + " cannot be assigned during registration.");
+    }
 
     if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
       if (!userDto.getRoles().contains(UserRole.GUEST.name())
@@ -75,7 +83,7 @@ public class UserServiceImpl implements UserService {
 
     User savedUser = userRepository.save(user);
 
-    return modelMapper.map(savedUser, UserResponseDto.class);
+    return userResponseMapper.toResponse(savedUser);
   }
 
   @Override
@@ -85,7 +93,7 @@ public class UserServiceImpl implements UserService {
             .findByEmail(email)
             .orElseThrow(
                 () -> new ResourceNotFoundException("User with given email does not exist."));
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
@@ -102,15 +110,17 @@ public class UserServiceImpl implements UserService {
 
     User user = userRepository.save(existingUser);
 
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
+  @Transactional
   public void deleteUser(String userId) {
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+    refreshTokenRepository.deleteByUserId(userId);
     userRepository.delete(user);
   }
 
@@ -120,15 +130,13 @@ public class UserServiceImpl implements UserService {
         userRepository
             .findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
   @Transactional(readOnly = true)
   public Iterable<UserResponseDto> getAllUsers() {
-    return userRepository.findAll().stream()
-        .map(user -> modelMapper.map(user, UserResponseDto.class))
-        .toList();
+    return userRepository.findAll().stream().map(userResponseMapper::toResponse).toList();
   }
 
   @Override
@@ -142,7 +150,7 @@ public class UserServiceImpl implements UserService {
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
@@ -165,7 +173,7 @@ public class UserServiceImpl implements UserService {
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
@@ -179,7 +187,7 @@ public class UserServiceImpl implements UserService {
     existingUser.setUpdatedAt(new Date());
 
     User user = userRepository.save(existingUser);
-    return modelMapper.map(user, UserResponseDto.class);
+    return userResponseMapper.toResponse(user);
   }
 
   @Override
@@ -208,6 +216,6 @@ public class UserServiceImpl implements UserService {
 
     User savedUser = userRepository.save(user);
 
-    return modelMapper.map(savedUser, UserResponseDto.class);
+    return userResponseMapper.toResponse(savedUser);
   }
 }

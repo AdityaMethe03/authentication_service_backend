@@ -2,6 +2,8 @@ package com.authentication.auth_app_backend.modules.role;
 
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +20,7 @@ public class Role {
   @Id private String id;
   private String name;
   private RoleStatusEnum status;
+  private Set<Permission> permissions = new HashSet<>();
   private Date createdAt;
   private Date updatedAt;
 }

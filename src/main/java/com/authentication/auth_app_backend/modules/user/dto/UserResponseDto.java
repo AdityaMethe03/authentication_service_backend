@@ -21,5 +21,6 @@ public class UserResponseDto {
   private Date updatedAt;
   private Provider provider;
   private Set<String> roles;
+  private Set<String> permissions;
   private UserStatusEnum status;
 }

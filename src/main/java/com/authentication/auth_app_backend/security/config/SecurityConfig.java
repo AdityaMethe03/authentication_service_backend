@@ -2,7 +2,6 @@ package com.authentication.auth_app_backend.security.config;
 
 import com.authentication.auth_app_backend.common.dtos.ApiError;
 import com.authentication.auth_app_backend.config.SecurityUrls;
-import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Arrays;
@@ -15,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,6 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -44,12 +45,6 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(SecurityUrls.AUTH_PUBLIC_URLS)
                     .permitAll()
-                    .requestMatchers(SecurityUrls.SUDO_ADMIN_URLS)
-                    .hasAuthority(UserRole.SUDO_ADMIN.name())
-                    .requestMatchers(SecurityUrls.ADMIN_URLS)
-                    .hasAnyAuthority(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name())
-                    .requestMatchers(SecurityUrls.ALL_ROLES_URLS)
-                    .hasAnyAuthority(UserRole.ALL())
                     .anyRequest()
                     .authenticated())
         .logout(AbstractHttpConfigurer::disable)

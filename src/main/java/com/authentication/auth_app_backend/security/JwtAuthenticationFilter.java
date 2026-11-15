@@ -6,12 +6,10 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.*;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -23,6 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
   private final UserRepository userRepository;
+  private final AuthorityResolver authorityResolver;
   private final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
   @Override
@@ -48,15 +47,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             .ifPresent(
                 user -> {
                   if (user.isEnable()) {
-                    List<GrantedAuthority> authorities =
-                        user.getRoles() == null
-                            ? List.of()
-                            : user.getRoles().stream()
-                                .map(SimpleGrantedAuthority::new)
-                                .collect(Collectors.toList());
+                    List<GrantedAuthority> authorities = authorityResolver.resolve(user.getRoles());
 
                     var auth =
-                        new UsernamePasswordAuthenticationToken(user.getEmail(), null, authorities);
+                        new UsernamePasswordAuthenticationToken(user.getId(), null, authorities);
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     if (SecurityContextHolder.getContext().getAuthentication() == null)
@@ -74,6 +68,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    return request.getRequestURI().startsWith("/api/v1/auth/");
+    return request.getServletPath().startsWith("/api/v1/auth/");
   }
 }

@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,6 +22,7 @@ public class RoleController {
 
   /***  Register apis ***/
   @PostMapping(value = "/register")
+  @PreAuthorize("hasAuthority('ROLE:WRITE')")
   public ResponseEntity<RoleDto> createRole(@RequestBody RoleDto role) {
     role.setId(UUID.randomUUID().toString());
     return ResponseEntity.status(HttpStatus.CREATED).body(roleService.createRole(role));
@@ -28,12 +30,14 @@ public class RoleController {
 
   /***  Update apis ***/
   @PutMapping(value = "/update/{roleId}")
+  @PreAuthorize("hasAuthority('ROLE:UPDATE')")
   public ResponseEntity<RoleDto> updateRole(
       @RequestBody RoleDto role, @PathVariable String roleId) {
     return ResponseEntity.ok(roleService.updateRole(role, roleId));
   }
 
   @PutMapping(value = "/update/status/{roleId}")
+  @PreAuthorize("hasAuthority('ROLE:UPDATE')")
   public ResponseEntity<RoleDto> updateRoleStatus(
       @RequestBody RoleStatusEnum status, @PathVariable String roleId) {
     return ResponseEntity.ok(roleService.updateRoleStatusById(status, roleId));
@@ -41,17 +45,20 @@ public class RoleController {
 
   /***  Delete apis ***/
   @DeleteMapping(value = "/delete/{roleId}")
+  @PreAuthorize("hasAuthority('ROLE:DELETE')")
   public void deleteRole(@PathVariable String roleId) {
     roleService.deleteRole(roleId);
   }
 
   /***  Get apis  ***/
   @GetMapping(value = "/lookup/search/{roleId}")
+  @PreAuthorize("hasAuthority('ROLE:READ')")
   public ResponseEntity<RoleDto> getRoleById(@PathVariable String roleId) {
     return ResponseEntity.ok(roleService.getRoleById(roleId));
   }
 
   @GetMapping(value = "/lookup/search/all")
+  @PreAuthorize("hasAuthority('ROLE:READ')")
   public ResponseEntity<Iterable<RoleDto>> getAllRoles() {
     return ResponseEntity.ok(roleService.getAllRoles());
   }

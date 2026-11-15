@@ -7,6 +7,7 @@ import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -35,6 +36,11 @@ public class RoleServiceImpl implements RoleService {
     role.setCreatedAt(new Date());
     role.setUpdatedAt(null);
 
+    role.setPermissions(
+        roleDto.getPermissions() != null
+            ? new HashSet<>(roleDto.getPermissions())
+            : new HashSet<>());
+
     Role savedRole = roleRepository.save(role);
 
     return modelMapper.map(savedRole, RoleDto.class);
@@ -43,16 +49,24 @@ public class RoleServiceImpl implements RoleService {
   @Override
   public RoleDto updateRole(RoleDto roleDto, String roleId) {
 
+    if (isSudoAdmin(roleDto.getName())) {
+      throw new IllegalArgumentException("Default role with given name cannot be updated.");
+    }
+
     Role existingRole =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
     existingRole.setName(roleDto.getName());
     existingRole.setStatus(roleDto.getStatus());
+    existingRole.setPermissions(
+        roleDto.getPermissions() != null
+            ? new HashSet<>(roleDto.getPermissions())
+            : existingRole.getPermissions());
     existingRole.setUpdatedAt(new Date());
 
     Role role = roleRepository.save(existingRole);
-
     return modelMapper.map(role, RoleDto.class);
   }
 
@@ -64,10 +78,8 @@ public class RoleServiceImpl implements RoleService {
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
 
-    if (UserRole.SUDO_ADMIN.name().equals(role.getName())
-        || UserRole.ADMIN.name().equals(role.getName())
-        || UserRole.GUEST.name().equals(role.getName())) {
-      throw new IllegalArgumentException("Role with given name cannot be deleted.");
+    if (isSudoAdmin(role.getName())) {
+      throw new IllegalArgumentException("Default role with given name cannot be deleted.");
     }
 
     List<User> users = userRepository.findByRolesContaining(role.getName());
@@ -101,9 +113,7 @@ public class RoleServiceImpl implements RoleService {
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
 
-    if (UserRole.SUDO_ADMIN.name().equals(existingRole.getName())
-        || UserRole.ADMIN.name().equals(existingRole.getName())
-        || UserRole.GUEST.name().equals(existingRole.getName())) {
+    if (isSudoAdmin(existingRole.getName())) {
       throw new IllegalArgumentException("Default role with given name cannot be updated.");
     }
 
@@ -111,5 +121,9 @@ public class RoleServiceImpl implements RoleService {
     existingRole.setUpdatedAt(new Date());
     Role role = roleRepository.save(existingRole);
     return modelMapper.map(role, RoleDto.class);
+  }
+
+  private boolean isSudoAdmin(String name) {
+    return UserRole.SUDO_ADMIN.name().equals(name);
   }
 }

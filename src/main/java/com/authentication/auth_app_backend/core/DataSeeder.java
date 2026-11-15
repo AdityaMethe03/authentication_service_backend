@@ -1,7 +1,10 @@
 package com.authentication.auth_app_backend.core;
 
+import com.authentication.auth_app_backend.modules.role.Permission;
 import com.authentication.auth_app_backend.modules.role.Role;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
+import com.authentication.auth_app_backend.modules.role.enums.ApplicationEntityType;
+import com.authentication.auth_app_backend.modules.role.enums.PermissionType;
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
@@ -9,9 +12,9 @@ import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
 import com.authentication.auth_app_backend.modules.user.enums.UserStatusEnum;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,24 +47,54 @@ public class DataSeeder implements ApplicationRunner {
   }
 
   private void seedDefaultRoles() {
-    Stream.of(UserRole.SUDO_ADMIN.name(), UserRole.ADMIN.name(), UserRole.GUEST.name())
-        .forEach(this::seedRole);
+    seedRole(UserRole.SUDO_ADMIN.name(), allPermissions(), true);
+    seedRole(UserRole.ADMIN.name(), adminPermissions(), false);
+    seedRole(UserRole.GUEST.name(), Set.of(), false); // self-service uses ownership checks
   }
 
-  private void seedRole(String roleName) {
-    roleRepository
-        .findByName(roleName)
-        .ifPresentOrElse(
-            role -> log.info("{} role already exists.", role.getName()),
-            () -> {
-              Role role = new Role();
-              role.setId(UUID.randomUUID().toString());
-              role.setName(roleName);
-              role.setStatus(RoleStatusEnum.ACTIVE);
-              role.setCreatedAt(new Date());
-              roleRepository.save(role);
-              log.info("{} role created.", roleName);
-            });
+  private void seedRole(String name, Set<Permission> defaults, boolean enforce) {
+    Role role = roleRepository.findByName(name).orElse(null);
+
+    if (role == null) {
+      role = new Role();
+      role.setId(UUID.randomUUID().toString());
+      role.setName(name);
+      role.setStatus(RoleStatusEnum.ACTIVE);
+      role.setPermissions(new HashSet<>(defaults));
+      role.setCreatedAt(new Date());
+      roleRepository.save(role);
+      log.info("{} role created with {} permissions.", name, defaults.size());
+      return;
+    }
+
+    if (role.getPermissions() == null) {
+      role.setPermissions(new HashSet<>());
+    }
+    if (enforce && !role.getPermissions().containsAll(defaults)) {
+      role.getPermissions().addAll(defaults);
+      roleRepository.save(role);
+      log.info("{} role synced with default permissions.", name);
+    } else {
+      log.info("{} role already exists.", name);
+    }
+  }
+
+  private static Set<Permission> allPermissions() {
+    Set<Permission> all = new HashSet<>();
+    for (ApplicationEntityType entity : ApplicationEntityType.values()) {
+      for (PermissionType action : PermissionType.values()) {
+        all.add(new Permission(entity, action));
+      }
+    }
+    return all;
+  }
+
+  private static Set<Permission> adminPermissions() {
+    return Set.of(
+        new Permission(ApplicationEntityType.USER, PermissionType.READ),
+        new Permission(ApplicationEntityType.USER, PermissionType.UPDATE),
+        new Permission(ApplicationEntityType.USER, PermissionType.WRITE),
+        new Permission(ApplicationEntityType.ROLE, PermissionType.READ));
   }
 
   private void seedSudoAdmin() {

@@ -7,6 +7,7 @@ import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToke
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
+import com.authentication.auth_app_backend.modules.user.UserResponseMapper;
 import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.security.CookieService;
@@ -18,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.util.*;
 import lombok.AllArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -46,7 +46,7 @@ public class AuthController {
   private final AuthenticationManager authenticationManager;
   private final UserRepository userRepository;
   private final JwtService jwtService;
-  private final ModelMapper modelMapper;
+  private final UserResponseMapper userResponseMapper;
   private final CookieService cookieService;
 
   private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -93,7 +93,7 @@ public class AuthController {
             accessToken,
             refreshToken,
             jwtService.getAccessTtlSeconds(),
-            modelMapper.map(user, UserResponseDto.class));
+            userResponseMapper.toResponse(user));
     return ResponseEntity.ok(tokenResponse);
   }
 
@@ -172,7 +172,7 @@ public class AuthController {
             newAccessToken,
             newRefreshToken,
             jwtService.getAccessTtlSeconds(),
-            modelMapper.map(storedUser, UserResponseDto.class)));
+            userResponseMapper.toResponse(storedUser)));
   }
 
   @PostMapping("/logout")

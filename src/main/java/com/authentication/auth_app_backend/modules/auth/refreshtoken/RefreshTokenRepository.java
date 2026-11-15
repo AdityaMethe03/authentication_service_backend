@@ -8,4 +8,6 @@ public interface RefreshTokenRepository extends MongoRepository<RefreshToken, St
   Optional<RefreshToken> findByJti(String jti);
 
   List<RefreshToken> findByUserIdAndRevokedFalse(String userId);
+
+  void deleteByUserId(String userId);
 }
