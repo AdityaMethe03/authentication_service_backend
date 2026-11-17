@@ -48,17 +48,19 @@ public class DataSeeder implements ApplicationRunner {
 
   private void seedDefaultRoles() {
     seedRole(UserRole.SUDO_ADMIN.name(), allPermissions(), true);
-    seedRole(UserRole.ADMIN.name(), adminPermissions(), false);
+    seedRole(UserRole.ADMIN.name(), adminPermissions(), true);
     seedRole(UserRole.GUEST.name(), Set.of(), false); // self-service uses ownership checks
   }
 
   private void seedRole(String name, Set<Permission> defaults, boolean enforce) {
-    Role role = roleRepository.findByName(name).orElse(null);
+    Role role = roleRepository.findByIdentifier(name).orElse(null);
 
     if (role == null) {
       role = new Role();
       role.setId(UUID.randomUUID().toString());
+      role.setIdentifier(name);
       role.setName(name);
+      role.setIsSystem(true);
       role.setStatus(RoleStatusEnum.ACTIVE);
       role.setPermissions(new HashSet<>(defaults));
       role.setCreatedAt(new Date());
@@ -70,10 +72,21 @@ public class DataSeeder implements ApplicationRunner {
     if (role.getPermissions() == null) {
       role.setPermissions(new HashSet<>());
     }
+    boolean metadataChanged = false;
+    if (role.getIdentifier() == null || role.getIdentifier().isBlank()) {
+      role.setIdentifier(name);
+      metadataChanged = true;
+    }
+    if (!Boolean.TRUE.equals(role.getIsSystem())) {
+      role.setIsSystem(true);
+      metadataChanged = true;
+    }
     if (enforce && !role.getPermissions().containsAll(defaults)) {
       role.getPermissions().addAll(defaults);
       roleRepository.save(role);
       log.info("{} role synced with default permissions.", name);
+    } else if (metadataChanged) {
+      roleRepository.save(role);
     } else {
       log.info("{} role already exists.", name);
     }
@@ -94,7 +107,8 @@ public class DataSeeder implements ApplicationRunner {
         new Permission(ApplicationEntityType.USER, PermissionType.READ),
         new Permission(ApplicationEntityType.USER, PermissionType.UPDATE),
         new Permission(ApplicationEntityType.USER, PermissionType.WRITE),
-        new Permission(ApplicationEntityType.ROLE, PermissionType.READ));
+        new Permission(ApplicationEntityType.ROLE, PermissionType.READ),
+        new Permission(ApplicationEntityType.ROLE, PermissionType.UPDATE));
   }
 
   private void seedSudoAdmin() {

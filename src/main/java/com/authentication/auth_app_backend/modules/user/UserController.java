@@ -42,6 +42,13 @@ public class UserController {
     return ResponseEntity.ok(userService.updateUser(user, userId));
   }
 
+  @PutMapping(value = "/update/all/{userId}")
+  @PreAuthorize("hasAuthority('USER:UPDATE') and hasAuthority('ROLE:UPDATE')")
+  public ResponseEntity<UserResponseDto> updateAllUserFields(
+      @RequestBody UserAdminUpdateDto user, @PathVariable String userId) {
+    return ResponseEntity.ok(userService.updateAllUserFields(user, userId));
+  }
+
   @PutMapping(value = "/update/profile/{userId}")
   @PreAuthorize("hasAuthority('USER:UPDATE') or #userId == authentication.name")
   public ResponseEntity<UserResponseDto> updateUserProfile(

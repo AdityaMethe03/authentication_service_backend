@@ -3,7 +3,6 @@ package com.authentication.auth_app_backend.modules.role;
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
-import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import java.util.Date;
@@ -25,6 +24,13 @@ public class RoleServiceImpl implements RoleService {
   @Transactional
   public RoleDto createRole(RoleDto roleDto) {
 
+    if (roleDto.getIdentifier() == null || roleDto.getIdentifier().isBlank()) {
+      throw new IllegalArgumentException("Role identifier is required.");
+    }
+    if (roleRepository.existsByIdentifier(roleDto.getIdentifier())) {
+      throw new IllegalArgumentException("Role identifier already exists.");
+    }
+
     roleRepository
         .findByName(roleDto.getName())
         .ifPresent(
@@ -40,6 +46,7 @@ public class RoleServiceImpl implements RoleService {
         roleDto.getPermissions() != null
             ? new HashSet<>(roleDto.getPermissions())
             : new HashSet<>());
+    role.setIsSystem(false);
 
     Role savedRole = roleRepository.save(role);
 
@@ -48,15 +55,27 @@ public class RoleServiceImpl implements RoleService {
 
   @Override
   public RoleDto updateRole(RoleDto roleDto, String roleId) {
-
-    if (isSudoAdmin(roleDto.getName())) {
-      throw new IllegalArgumentException("Default role with given name cannot be updated.");
-    }
-
     Role existingRole =
         roleRepository
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    if ("SUDO_ADMIN".equals(existingRole.getIdentifier())) {
+      throw new IllegalArgumentException("The SUDO_ADMIN role cannot be changed.");
+    }
+    if (Boolean.TRUE.equals(existingRole.getIsSystem())
+        && (!java.util.Objects.equals(existingRole.getName(), roleDto.getName())
+            || !java.util.Objects.equals(existingRole.getStatus(), roleDto.getStatus()))) {
+      throw new IllegalArgumentException("The name and status of system roles cannot be changed.");
+    }
+
+    roleRepository
+        .findByName(roleDto.getName())
+        .filter(role -> !role.getId().equals(roleId))
+        .ifPresent(
+            role -> {
+              throw new IllegalArgumentException("Role with given name already exists.");
+            });
 
     existingRole.setName(roleDto.getName());
     existingRole.setStatus(roleDto.getStatus());
@@ -78,12 +97,12 @@ public class RoleServiceImpl implements RoleService {
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
 
-    if (isSudoAdmin(role.getName())) {
-      throw new IllegalArgumentException("Default role with given name cannot be deleted.");
+    if (Boolean.TRUE.equals(role.getIsSystem())) {
+      throw new IllegalArgumentException("System roles cannot be deleted.");
     }
 
-    List<User> users = userRepository.findByRolesContaining(role.getName());
-    users.forEach(user -> user.getRoles().remove(role.getName()));
+    List<User> users = userRepository.findByRolesContaining(role.getIdentifier());
+    users.forEach(user -> user.getRoles().remove(role.getIdentifier()));
     userRepository.saveAll(users);
 
     roleRepository.delete(role);
@@ -113,17 +132,13 @@ public class RoleServiceImpl implements RoleService {
             .findById(roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
 
-    if (isSudoAdmin(existingRole.getName())) {
-      throw new IllegalArgumentException("Default role with given name cannot be updated.");
+    if (Boolean.TRUE.equals(existingRole.getIsSystem())) {
+      throw new IllegalArgumentException("The status of system roles cannot be changed.");
     }
 
     existingRole.setStatus(status);
     existingRole.setUpdatedAt(new Date());
     Role role = roleRepository.save(existingRole);
     return modelMapper.map(role, RoleDto.class);
-  }
-
-  private boolean isSudoAdmin(String name) {
-    return UserRole.SUDO_ADMIN.name().equals(name);
   }
 }

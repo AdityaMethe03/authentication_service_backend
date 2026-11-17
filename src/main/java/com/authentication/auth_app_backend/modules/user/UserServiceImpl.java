@@ -4,6 +4,7 @@ import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundExc
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
 import com.authentication.auth_app_backend.modules.role.Role;
 import com.authentication.auth_app_backend.modules.role.RoleRepository;
+import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.dto.*;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
@@ -43,43 +44,22 @@ public class UserServiceImpl implements UserService {
     user.setCreatedAt(new Date());
     user.setUpdatedAt(null);
 
-    if (userDto.getRoles() != null && userDto.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
+    if (userDto.getRoles() != null
+        && userDto.getRoles().stream().anyMatch(role -> !UserRole.GUEST.name().equals(role))) {
       throw new IllegalArgumentException(
-          "Role " + UserRole.SUDO_ADMIN.name() + " cannot be assigned during registration.");
+          "Only the GUEST role can be assigned during user registration.");
     }
 
-    if (userDto.getRoles() != null && !userDto.getRoles().isEmpty()) {
-      if (!userDto.getRoles().contains(UserRole.GUEST.name())
-          && !userDto.getRoles().contains(UserRole.ADMIN.name())) {
-        user.getRoles().add(UserRole.GUEST.name());
-      }
-
-      userDto
-          .getRoles()
-          .forEach(
-              role -> {
-                roleRepository
-                    .findByName(role)
-                    .ifPresentOrElse(
-                        roleDb -> {
-                          user.getRoles().add(roleDb.getName());
-                        },
-                        () -> {
-                          throw new IllegalArgumentException(
-                              "Role with given name does not exist.");
-                        });
-              });
-    } else {
-      roleRepository
-          .findByName(UserRole.GUEST.name())
-          .ifPresentOrElse(
-              roleDb -> {
-                user.setRoles(Set.of(roleDb.getName()));
-              },
-              () -> {
-                throw new IllegalArgumentException(UserRole.GUEST.name() + " role does not exist.");
-              });
+    Role guestRole =
+        roleRepository
+            .findByIdentifier(UserRole.GUEST.name())
+            .orElseThrow(
+                () ->
+                    new ResourceNotFoundException(UserRole.GUEST.name() + " role does not exist."));
+    if (guestRole.getStatus() != RoleStatusEnum.ACTIVE) {
+      throw new IllegalArgumentException("The GUEST role is not active.");
     }
+    user.setRoles(Set.of(guestRole.getIdentifier()));
 
     User savedUser = userRepository.save(user);
 
@@ -111,6 +91,43 @@ public class UserServiceImpl implements UserService {
     User user = userRepository.save(existingUser);
 
     return userResponseMapper.toResponse(user);
+  }
+
+  @Override
+  @Transactional
+  public UserResponseDto updateAllUserFields(UserAdminUpdateDto userDto, String userId) {
+    User existingUser =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
+
+    if (existingUser.getRoles() != null
+        && existingUser.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
+      throw new IllegalArgumentException("The SUDO_ADMIN user's account cannot be changed.");
+    }
+    if (userDto.getRoles() == null || userDto.getRoles().isEmpty()) {
+      throw new IllegalArgumentException("At least one role must be assigned.");
+    }
+    if (userDto.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
+      throw new IllegalArgumentException("SUDO_ADMIN cannot be assigned to users.");
+    }
+
+    var roles = roleRepository.findByIdentifierIn(userDto.getRoles());
+    var activeRoleNames =
+        roles.stream()
+            .filter(role -> role.getStatus() == RoleStatusEnum.ACTIVE)
+            .map(Role::getIdentifier)
+            .collect(java.util.stream.Collectors.toSet());
+    if (!activeRoleNames.equals(userDto.getRoles())) {
+      throw new IllegalArgumentException("All assigned roles must exist and be active.");
+    }
+
+    existingUser.setName(userDto.getName());
+    existingUser.setEnable(userDto.isEnable());
+    existingUser.setStatus(userDto.getStatus());
+    existingUser.setRoles(activeRoleNames);
+    existingUser.setUpdatedAt(new Date());
+    return userResponseMapper.toResponse(userRepository.save(existingUser));
   }
 
   @Override
@@ -203,7 +220,7 @@ public class UserServiceImpl implements UserService {
 
     Role role =
         roleRepository
-            .findByName(UserRole.ADMIN.name())
+            .findByIdentifier(UserRole.ADMIN.name())
             .orElseThrow(() -> new ResourceNotFoundException("Admin role does not exist."));
 
     User user = modelMapper.map(userDto, User.class);
@@ -212,7 +229,7 @@ public class UserServiceImpl implements UserService {
     user.setCreatedAt(new Date());
     user.setUpdatedAt(null);
     user.setProvider(userDto.getProvider() != null ? userDto.getProvider() : Provider.LOCAL);
-    user.setRoles(Set.of(role.getName()));
+    user.setRoles(Set.of(role.getIdentifier()));
 
     User savedUser = userRepository.save(user);
 

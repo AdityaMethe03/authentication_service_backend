@@ -18,7 +18,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "roles")
 public class Role {
   @Id private String id;
+  private String identifier;
   private String name;
+  private Boolean isSystem = false;
   private RoleStatusEnum status;
   private Set<Permission> permissions = new HashSet<>();
   private Date createdAt;

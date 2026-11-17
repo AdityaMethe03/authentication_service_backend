@@ -13,6 +13,8 @@ public interface UserService {
   // update user
   UserResponseDto updateUser(UserDto user, String userId);
 
+  UserResponseDto updateAllUserFields(UserAdminUpdateDto user, String userId);
+
   // delete user
   void deleteUser(String userId);
 

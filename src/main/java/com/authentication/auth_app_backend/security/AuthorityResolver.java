@@ -16,11 +16,11 @@ public class AuthorityResolver {
 
   private final RoleRepository roleRepository;
 
-  public List<GrantedAuthority> resolve(Set<String> roleNames) {
-    if (roleNames == null || roleNames.isEmpty()) {
+  public List<GrantedAuthority> resolve(Set<String> roleIdentifiers) {
+    if (roleIdentifiers == null || roleIdentifiers.isEmpty()) {
       return List.of();
     }
-    return roleRepository.findByNameIn(roleNames).stream()
+    return roleRepository.findByIdentifierIn(roleIdentifiers).stream()
         .filter(role -> role.getStatus() == RoleStatusEnum.ACTIVE)
         .filter(role -> role.getPermissions() != null)
         .flatMap(role -> role.getPermissions().stream())

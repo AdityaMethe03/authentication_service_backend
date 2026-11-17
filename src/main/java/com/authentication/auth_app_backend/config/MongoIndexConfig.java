@@ -24,5 +24,8 @@ public class MongoIndexConfig {
             new Index()
                 .on("expiresAt", Sort.Direction.ASC)
                 .expire(0, TimeUnit.SECONDS)); // 0 = delete at expiresAt
+    mongoTemplate
+        .indexOps("roles")
+        .createIndex(new Index().on("identifier", Sort.Direction.ASC).unique().sparse());
   }
 }

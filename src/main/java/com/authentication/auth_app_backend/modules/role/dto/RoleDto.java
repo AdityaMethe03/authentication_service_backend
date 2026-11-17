@@ -15,7 +15,9 @@ import lombok.Setter;
 @NoArgsConstructor
 public class RoleDto {
   private String id;
+  private String identifier;
   private String name;
+  private Boolean isSystem;
   private RoleStatusEnum status;
   private Set<Permission> permissions;
   private Date createdAt;
