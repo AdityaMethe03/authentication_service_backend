@@ -3,7 +3,12 @@
 # ===============================
 spring.application.name=auth-app
 server.port=8091
-server.servlet.context-path=/app
+server.servlet.context-path=/authapp
+app.cors.front-end-url=http://localhost:5173
+app.auth.frontend.success-redirect="http://localhost:5173/oauth/success"
+app.auth.frontend.failure-redirect="http://localhost:5173/oauth/failure"
+app.sudo-admin.email =
+app.sudo-admin.password =
 
 # ===============================
 # = Profile - dev/test/prod
@@ -22,6 +27,36 @@ app.swagger.server.urls=http://127.0.0.1:${server.port}${server.servlet.context-
 # ===============================
 # DATABASE(mongodb)
 # ===============================
-spring.mongodb.username=
-spring.mongodb.password=
-spring.mongodb.uri=mongodb+srv://${spring.mongodb.username}:${spring.mongodb.password}@authentication-app-clus.g4pysqu.mongodb.net/
+spring.data.mongodb.username=
+spring.data.mongodb.password=
+spring.data.mongodb.uri=mongodb+srv://${spring.data.mongodb.username}:${spring.data.mongodb.password}@cluster0.vg1kfvj.mongodb.net/Authentication_App?retryWrites=true&w=majority
+
+# ===============================
+# JWT
+# ===============================
+security.jwt.secret-key=${JWT_SECRET:jwtsecretstrongenoughthatevenjamesbondandtonystarkandthanoscantbreakitordecodeitilysmbydlmb}
+security.jwt.issuer=${JWT_ISSUER:com.authentication.auth_app_backend}
+security.jwt.access-ttl-seconds=${JWT_ACCESS_TTL_SECONDS:3600}
+security.jwt.refresh-ttl-seconds=${JWT_REFRESH_TTL_SECONDS:86400}
+security.jwt.refresh-token-cookie-name=${JWT_REFRESH_COOKIE_NAME:refreshToken}
+security.jwt.cookie-secure=${JWT_COOKIE_SECURE:true}
+security.jwt.cookie-http-only=${JWT_COOKIE_HTTP_ONLY:true}
+security.jwt.cookie-same-site=${JWT_COOKIE_SAME_SITE:lax}
+security.jwt.cookie-domain=${JWT_COOKIE_DOMAIN:localhost}
+
+# ===============================
+# OAUTH
+# ===============================
+spring.security.oauth2.client.registration.google.client-id=
+spring.security.oauth2.client.registration.google.client-secret=
+spring.security.oauth2.client.registration.google.scope=email,profile,openid
+spring.security.oauth2.client.registration.github.client-id=
+spring.security.oauth2.client.registration.github.client-secret=
+spring.security.oauth2.client.registration.github.redirect-uri="{baseUrl}/login/oauth2/code/{registrationId}"
+spring.security.oauth2.client.registration.github.scope=user:email,read:user
+
+# ===============================
+# Logging
+# ===============================
+logging.level.org.springframework.security=DEBUG
+

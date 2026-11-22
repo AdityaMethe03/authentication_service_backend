@@ -148,7 +148,6 @@ public class TenantServiceImpl implements TenantService {
             ApplicationEntityType.USER,
             PermissionType.READ,
             PermissionType.WRITE,
-            PermissionType.UPDATE,
             ApplicationEntityType.ROLE,
             PermissionType.READ));
     createSystemRole(tenantId, UserRole.USER.name(), Set.of());
