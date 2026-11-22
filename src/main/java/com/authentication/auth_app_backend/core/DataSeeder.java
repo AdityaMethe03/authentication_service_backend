@@ -7,6 +7,9 @@ import com.authentication.auth_app_backend.modules.role.enums.ApplicationEntityT
 import com.authentication.auth_app_backend.modules.role.enums.PermissionType;
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
+import com.authentication.auth_app_backend.modules.tenant.Tenant;
+import com.authentication.auth_app_backend.modules.tenant.TenantRepository;
+import com.authentication.auth_app_backend.modules.tenant.enums.TenantStatusEnum;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
@@ -29,6 +32,7 @@ import org.springframework.stereotype.Component;
 public class DataSeeder implements ApplicationRunner {
 
   private final RoleRepository roleRepository;
+  private final TenantRepository tenantRepository;
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
 
@@ -42,22 +46,37 @@ public class DataSeeder implements ApplicationRunner {
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
+    seedSystemTenant();
     seedDefaultRoles();
     seedSudoAdmin();
   }
 
+  private void seedSystemTenant() {
+    tenantRepository
+        .findByTenantCodeIgnoreCase("SYSTEM")
+        .orElseGet(
+            () ->
+                tenantRepository.save(
+                    Tenant.builder()
+                        .id(UUID.randomUUID().toString())
+                        .tenantCode("SYSTEM")
+                        .name("System")
+                        .status(TenantStatusEnum.ACTIVE)
+                        .createdAt(new Date())
+                        .build()));
+  }
+
   private void seedDefaultRoles() {
     seedRole(UserRole.SUDO_ADMIN.name(), allPermissions(), true);
-    seedRole(UserRole.ADMIN.name(), adminPermissions(), true);
-    seedRole(UserRole.GUEST.name(), Set.of(), false); // self-service uses ownership checks
   }
 
   private void seedRole(String name, Set<Permission> defaults, boolean enforce) {
-    Role role = roleRepository.findByIdentifier(name).orElse(null);
+    Role role = roleRepository.findByTenantIdAndIdentifier("SYSTEM", name).orElse(null);
 
     if (role == null) {
       role = new Role();
       role.setId(UUID.randomUUID().toString());
+      role.setTenantId("SYSTEM");
       role.setIdentifier(name);
       role.setName(name);
       role.setIsSystem(true);
@@ -102,25 +121,17 @@ public class DataSeeder implements ApplicationRunner {
     return all;
   }
 
-  private static Set<Permission> adminPermissions() {
-    return Set.of(
-        new Permission(ApplicationEntityType.USER, PermissionType.READ),
-        new Permission(ApplicationEntityType.USER, PermissionType.UPDATE),
-        new Permission(ApplicationEntityType.USER, PermissionType.WRITE),
-        new Permission(ApplicationEntityType.ROLE, PermissionType.READ),
-        new Permission(ApplicationEntityType.ROLE, PermissionType.UPDATE));
-  }
-
   private void seedSudoAdmin() {
     userRepository
-        .findByEmail(sudoAdminEmail)
+        .findByTenantIdAndEmail("SYSTEM", sudoAdminEmail.trim().toLowerCase())
         .ifPresentOrElse(
             user -> log.info("Sudo admin already exists: {}", user.getEmail()),
             () -> {
               User user =
                   User.builder()
                       .id(sudoAdminEmail)
-                      .email(sudoAdminEmail)
+                      .tenantId("SYSTEM")
+                      .email(sudoAdminEmail.trim().toLowerCase())
                       .name("Sudo Admin")
                       .password(passwordEncoder.encode(sudoAdminPassword))
                       .enable(true)

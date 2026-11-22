@@ -3,6 +3,8 @@ package com.authentication.auth_app_backend.security.config;
 import com.authentication.auth_app_backend.common.dtos.ApiError;
 import com.authentication.auth_app_backend.config.SecurityUrls;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
+import com.authentication.auth_app_backend.security.OAuth2SuccessHandler;
+import com.authentication.auth_app_backend.security.TenantContextFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Arrays;
 import java.util.List;
@@ -34,12 +36,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final TenantContextFilter tenantContextFilter;
+  private final OAuth2SuccessHandler oAuth2SuccessHandler;
   private final ObjectMapper objectMapper;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(Customizer.withDefaults())
+        .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler))
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
@@ -83,7 +88,8 @@ public class SecurityConfig {
                                   true);
                           response.getWriter().write(objectMapper.writeValueAsString(apiError));
                         })))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(tenantContextFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(jwtAuthenticationFilter, TenantContextFilter.class);
 
     return http.build();
   }

@@ -3,8 +3,10 @@ package com.authentication.auth_app_backend.modules.role;
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
+import com.authentication.auth_app_backend.modules.role.enums.UserRole;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
+import com.authentication.auth_app_backend.security.TenantContext;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -23,22 +25,29 @@ public class RoleServiceImpl implements RoleService {
   @Override
   @Transactional
   public RoleDto createRole(RoleDto roleDto) {
+    String tenantId = TenantContext.getTenantId();
 
     if (roleDto.getIdentifier() == null || roleDto.getIdentifier().isBlank()) {
       throw new IllegalArgumentException("Role identifier is required.");
     }
-    if (roleRepository.existsByIdentifier(roleDto.getIdentifier())) {
+    if (!roleDto.getIdentifier().matches("[A-Z][A-Z0-9_]*")) {
+      throw new IllegalArgumentException(
+          "Role identifier must start with an uppercase letter and contain only uppercase letters, numbers, and underscores.");
+    }
+    validateSudoAdminRoleScope(tenantId, roleDto.getIdentifier());
+    if (roleRepository.existsByTenantIdAndIdentifier(tenantId, roleDto.getIdentifier())) {
       throw new IllegalArgumentException("Role identifier already exists.");
     }
 
     roleRepository
-        .findByName(roleDto.getName())
+        .findByTenantIdAndName(tenantId, roleDto.getName())
         .ifPresent(
             role -> {
               throw new IllegalArgumentException("Role with given name already exists.");
             });
 
     Role role = modelMapper.map(roleDto, Role.class);
+    role.setTenantId(tenantId);
     role.setCreatedAt(new Date());
     role.setUpdatedAt(null);
 
@@ -55,10 +64,13 @@ public class RoleServiceImpl implements RoleService {
 
   @Override
   public RoleDto updateRole(RoleDto roleDto, String roleId) {
+    String tenantId = TenantContext.getTenantId();
     Role existingRole =
         roleRepository
-            .findById(roleId)
+            .findByTenantIdAndId(tenantId, roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    validateSudoAdminRoleScope(tenantId, roleDto.getIdentifier(), existingRole.getIdentifier());
 
     if ("SUDO_ADMIN".equals(existingRole.getIdentifier())) {
       throw new IllegalArgumentException("The SUDO_ADMIN role cannot be changed.");
@@ -70,7 +82,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     roleRepository
-        .findByName(roleDto.getName())
+        .findByTenantIdAndName(tenantId, roleDto.getName())
         .filter(role -> !role.getId().equals(roleId))
         .ifPresent(
             role -> {
@@ -92,16 +104,20 @@ public class RoleServiceImpl implements RoleService {
   @Override
   @Transactional
   public void deleteRole(String roleId) {
+    String tenantId = TenantContext.getTenantId();
     Role role =
         roleRepository
-            .findById(roleId)
+            .findByTenantIdAndId(tenantId, roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    validateSudoAdminRoleScope(tenantId, role.getIdentifier());
 
     if (Boolean.TRUE.equals(role.getIsSystem())) {
       throw new IllegalArgumentException("System roles cannot be deleted.");
     }
 
-    List<User> users = userRepository.findByRolesContaining(role.getIdentifier());
+    List<User> users =
+        userRepository.findByTenantIdAndRolesContaining(tenantId, role.getIdentifier());
     users.forEach(user -> user.getRoles().remove(role.getIdentifier()));
     userRepository.saveAll(users);
 
@@ -110,9 +126,10 @@ public class RoleServiceImpl implements RoleService {
 
   @Override
   public RoleDto getRoleById(String roleId) {
+    String tenantId = TenantContext.getTenantId();
     Role role =
         roleRepository
-            .findById(roleId)
+            .findByTenantIdAndId(tenantId, roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
     return modelMapper.map(role, RoleDto.class);
   }
@@ -120,17 +137,23 @@ public class RoleServiceImpl implements RoleService {
   @Override
   @Transactional(readOnly = true)
   public Iterable<RoleDto> getAllRoles() {
-    return roleRepository.findAll().stream()
-        .map(role -> modelMapper.map(role, RoleDto.class))
-        .toList();
+    String tenantId = TenantContext.getTenantId();
+    var roles =
+        TenantContext.SYSTEM_TENANT_ID.equals(tenantId) && TenantContext.isPlatformAdmin()
+            ? roleRepository.findAll()
+            : roleRepository.findAllByTenantId(tenantId);
+    return roles.stream().map(role -> modelMapper.map(role, RoleDto.class)).toList();
   }
 
   @Override
   public RoleDto updateRoleStatusById(RoleStatusEnum status, String roleId) {
+    String tenantId = TenantContext.getTenantId();
     Role existingRole =
         roleRepository
-            .findById(roleId)
+            .findByTenantIdAndId(tenantId, roleId)
             .orElseThrow(() -> new ResourceNotFoundException("Role not found with given id"));
+
+    validateSudoAdminRoleScope(tenantId, existingRole.getIdentifier());
 
     if (Boolean.TRUE.equals(existingRole.getIsSystem())) {
       throw new IllegalArgumentException("The status of system roles cannot be changed.");
@@ -140,5 +163,16 @@ public class RoleServiceImpl implements RoleService {
     existingRole.setUpdatedAt(new Date());
     Role role = roleRepository.save(existingRole);
     return modelMapper.map(role, RoleDto.class);
+  }
+
+  private static void validateSudoAdminRoleScope(String tenantId, String... roleValues) {
+    boolean sudoAdminRole =
+        java.util.Arrays.stream(roleValues)
+            .filter(java.util.Objects::nonNull)
+            .anyMatch(value -> UserRole.SUDO_ADMIN.name().equalsIgnoreCase(value.trim()));
+    if (sudoAdminRole && !TenantContext.SYSTEM_TENANT_ID.equals(tenantId)) {
+      throw new IllegalArgumentException(
+          "The SUDO_ADMIN role can only exist in the SYSTEM tenant.");
+    }
   }
 }

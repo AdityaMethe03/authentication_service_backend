@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Document(collection = "users")
 public class User implements UserDetails {
   @Id private String id;
+  private String tenantId;
   private String email;
   private String name;
   private String password;

@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "roles")
 public class Role {
   @Id private String id;
+  private String tenantId;
   private String identifier;
   private String name;
   private Boolean isSystem = false;

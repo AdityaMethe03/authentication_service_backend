@@ -6,5 +6,5 @@ import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 public interface AuthService {
   UserResponseDto registerUser(UserDto userDto);
 
-  void revokeAllUserSessions(String userId);
+  void revokeAllUserSessions(String tenantId, String userId);
 }

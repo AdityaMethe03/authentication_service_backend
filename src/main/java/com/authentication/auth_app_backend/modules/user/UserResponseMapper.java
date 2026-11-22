@@ -17,7 +17,7 @@ public class UserResponseMapper {
   public UserResponseDto toResponse(User user) {
     UserResponseDto response = modelMapper.map(user, UserResponseDto.class);
     response.setPermissions(
-        authorityResolver.resolve(user.getRoles()).stream()
+        authorityResolver.resolve(user.getTenantId(), user.getRoles()).stream()
             .map(authority -> authority.getAuthority())
             .collect(Collectors.toSet()));
     return response;

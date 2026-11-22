@@ -15,6 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class RoleDto {
   private String id;
+  private String tenantId;
   private String identifier;
   private String name;
   private Boolean isSystem;

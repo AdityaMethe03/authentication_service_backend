@@ -14,8 +14,14 @@ public class CustomUserDetailService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    String tenantId = TenantContext.getTenantId();
+    String normalizedEmail = username.trim().toLowerCase();
+    if (TenantContext.SUDO_ADMIN_EMAIL.equalsIgnoreCase(normalizedEmail)
+        && !TenantContext.SYSTEM_TENANT_ID.equals(tenantId)) {
+      throw new BadCredentialsException("Invalid Email or Password!!");
+    }
     return userRepository
-        .findByEmail(username)
+        .findByTenantIdAndEmail(tenantId, normalizedEmail)
         .orElseThrow(() -> new BadCredentialsException("Invalid Email or Password!!"));
   }
 }

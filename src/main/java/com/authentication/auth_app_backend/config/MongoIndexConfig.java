@@ -1,6 +1,9 @@
 package com.authentication.auth_app_backend.config;
 
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToken;
+import com.authentication.auth_app_backend.modules.role.Role;
+import com.authentication.auth_app_backend.modules.tenant.Tenant;
+import com.authentication.auth_app_backend.modules.user.User;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -25,7 +28,25 @@ public class MongoIndexConfig {
                 .on("expiresAt", Sort.Direction.ASC)
                 .expire(0, TimeUnit.SECONDS)); // 0 = delete at expiresAt
     mongoTemplate
-        .indexOps("roles")
-        .createIndex(new Index().on("identifier", Sort.Direction.ASC).unique().sparse());
+        .indexOps(Role.class)
+        .createIndex(
+            new Index()
+                .on("tenantId", Sort.Direction.ASC)
+                .on("identifier", Sort.Direction.ASC)
+                .unique());
+    mongoTemplate
+        .indexOps(User.class)
+        .createIndex(
+            new Index()
+                .on("tenantId", Sort.Direction.ASC)
+                .on("email", Sort.Direction.ASC)
+                .unique());
+    mongoTemplate
+        .indexOps(Tenant.class)
+        .createIndex(new Index().on("tenantCode", Sort.Direction.ASC).unique());
+    mongoTemplate
+        .indexOps(RefreshToken.class)
+        .createIndex(
+            new Index().on("tenantId", Sort.Direction.ASC).on("jti", Sort.Direction.ASC).unique());
   }
 }

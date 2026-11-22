@@ -13,6 +13,7 @@ import lombok.*;
 @Builder
 public class UserResponseDto {
   private String id;
+  private String tenantId;
   private String email;
   private String name;
   private String image;

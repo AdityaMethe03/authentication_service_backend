@@ -5,9 +5,9 @@ import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, String> {
-  Optional<RefreshToken> findByJti(String jti);
+  Optional<RefreshToken> findByTenantIdAndJti(String tenantId, String jti);
 
-  List<RefreshToken> findByUserIdAndRevokedFalse(String userId);
+  List<RefreshToken> findByTenantIdAndUserIdAndRevokedFalse(String tenantId, String userId);
 
-  void deleteByUserId(String userId);
+  void deleteByTenantIdAndUserId(String tenantId, String userId);
 }

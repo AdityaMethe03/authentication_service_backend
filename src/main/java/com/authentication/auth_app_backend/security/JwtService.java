@@ -46,7 +46,16 @@ public class JwtService {
         .issuer(issuer)
         .issuedAt(new Date())
         .expiration(Date.from(Instant.now().plusSeconds(accessTtlSeconds)))
-        .claims(Map.of("email", user.getEmail(), "roles", roles, "typ", "access"))
+        .claims(
+            Map.of(
+                "email",
+                user.getEmail(),
+                "roles",
+                roles,
+                "tenantId",
+                user.getTenantId(),
+                "typ",
+                "access"))
         .signWith(key, SignatureAlgorithm.HS512)
         .compact();
   }
@@ -59,6 +68,7 @@ public class JwtService {
         .issuer(issuer)
         .issuedAt(new Date())
         .expiration(Date.from(Instant.now().plusSeconds(refreshTtlSeconds)))
+        .claim("tenantId", user.getTenantId())
         .claim("typ", "refresh")
         .signWith(key, SignatureAlgorithm.HS512)
         .compact();
@@ -78,6 +88,10 @@ public class JwtService {
 
   public String getUserId(String token) {
     return parse(token).getPayload().getSubject();
+  }
+
+  public String getTenantId(String token) {
+    return parse(token).getPayload().get("tenantId", String.class);
   }
 
   public String getJti(String token) {

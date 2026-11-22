@@ -4,8 +4,9 @@ import java.util.Arrays;
 
 public enum UserRole {
   SUDO_ADMIN,
+  SYS_ADMIN,
   ADMIN,
-  GUEST;
+  USER;
 
   public static String[] ALL() {
     return Arrays.stream(values()).map(Enum::name).toArray(String[]::new);

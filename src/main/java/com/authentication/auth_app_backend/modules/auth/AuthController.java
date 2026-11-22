@@ -5,6 +5,8 @@ import com.authentication.auth_app_backend.modules.auth.dto.RefreshTokenRequest;
 import com.authentication.auth_app_backend.modules.auth.dto.TokenResponse;
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToken;
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
+import com.authentication.auth_app_backend.modules.tenant.TenantRepository;
+import com.authentication.auth_app_backend.modules.tenant.enums.TenantStatusEnum;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.UserResponseMapper;
@@ -12,6 +14,7 @@ import com.authentication.auth_app_backend.modules.user.dto.UserDto;
 import com.authentication.auth_app_backend.modules.user.dto.UserResponseDto;
 import com.authentication.auth_app_backend.security.CookieService;
 import com.authentication.auth_app_backend.security.JwtService;
+import com.authentication.auth_app_backend.security.TenantContext;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,6 +50,7 @@ public class AuthController {
   private final UserRepository userRepository;
   private final JwtService jwtService;
   private final UserResponseMapper userResponseMapper;
+  private final TenantRepository tenantRepository;
   private final CookieService cookieService;
 
   private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -56,9 +60,14 @@ public class AuthController {
       @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
     // authenticate
     Authentication authenticate = authenticate(loginRequest);
+    String tenantId = TenantContext.getTenantId();
+    tenantRepository
+        .findByTenantCodeIgnoreCase(tenantId)
+        .filter(tenant -> tenant.getStatus() == TenantStatusEnum.ACTIVE)
+        .orElseThrow(() -> new BadCredentialsException("Tenant is unavailable."));
     User user =
         userRepository
-            .findByEmail(loginRequest.email())
+            .findByTenantIdAndEmail(tenantId, loginRequest.email().trim().toLowerCase())
             .orElseThrow(() -> new BadCredentialsException("Invalid Username or Password."));
     if (!user.isEnable()) {
       throw new DisabledException("User is disabled");
@@ -70,6 +79,7 @@ public class AuthController {
         RefreshToken.builder() // refresh token object
             .id(UUID.randomUUID().toString())
             .jti(jti)
+            .tenantId(tenantId)
             .userId(user.getId())
             .createdAt(new Date())
             .expiresAt(Date.from(Instant.now().plusSeconds(jwtService.getRefreshTtlSeconds())))
@@ -125,14 +135,25 @@ public class AuthController {
 
     String jti = jwtService.getJti(refreshToken);
     String userId = jwtService.getUserId(refreshToken);
+    String tokenTenantId = jwtService.getTenantId(refreshToken);
+    if (!TenantContext.getTenantId().equals(tokenTenantId)) {
+      throw new BadCredentialsException("Refresh token tenant does not match request tenant.");
+    }
+    tenantRepository
+        .findByTenantCodeIgnoreCase(tokenTenantId)
+        .filter(tenant -> tenant.getStatus() == TenantStatusEnum.ACTIVE)
+        .orElseThrow(() -> new BadCredentialsException("Tenant is unavailable."));
     RefreshToken storedRefreshToken =
         refreshTokenRepository
-            .findByJti(jti)
+            .findByTenantIdAndJti(tokenTenantId, jti)
             .orElseThrow(() -> new BadCredentialsException("Refresh Token not recognized."));
+    if (!storedRefreshToken.getUserId().equals(userId)) {
+      throw new BadCredentialsException("Refresh token user does not match.");
+    }
 
     User storedUser =
         userRepository
-            .findById(storedRefreshToken.getUserId())
+            .findByTenantIdAndId(tokenTenantId, storedRefreshToken.getUserId())
             .orElseThrow(() -> new BadCredentialsException("User not found."));
 
     if (storedRefreshToken.isRevoked()) {
@@ -153,6 +174,7 @@ public class AuthController {
         RefreshToken.builder()
             .id(UUID.randomUUID().toString())
             .jti(newJti)
+            .tenantId(tokenTenantId)
             .userId(storedUser.getId())
             .createdAt(new Date())
             .expiresAt(Date.from(Instant.now().plusSeconds(jwtService.getRefreshTtlSeconds())))
@@ -183,13 +205,16 @@ public class AuthController {
               try {
                 if (jwtService.isRefreshToken(token)) {
                   String jti = jwtService.getJti(token);
-                  refreshTokenRepository
-                      .findByJti(jti)
-                      .ifPresent(
-                          rt -> {
-                            rt.setRevoked(true);
-                            refreshTokenRepository.save(rt);
-                          });
+                  String tokenTenantId = jwtService.getTenantId(token);
+                  if (TenantContext.getTenantId().equals(tokenTenantId)) {
+                    refreshTokenRepository
+                        .findByTenantIdAndJti(tokenTenantId, jti)
+                        .ifPresent(
+                            rt -> {
+                              rt.setRevoked(true);
+                              refreshTokenRepository.save(rt);
+                            });
+                  }
                 }
               } catch (JwtException ignored) {
               }
@@ -255,21 +280,23 @@ public class AuthController {
   @PostMapping("/logout/all")
   public ResponseEntity<Void> logoutAllSessions(
       HttpServletRequest request, HttpServletResponse response) {
-    String userId =
+    String tokenOwner =
         readRefreshTokenFromRequest(null, request)
             .map(
                 token -> {
                   try {
                     if (jwtService.isRefreshToken(token)) {
                       String jti = jwtService.getJti(token);
+                      String tokenTenantId = jwtService.getTenantId(token);
+                      if (!TenantContext.getTenantId().equals(tokenTenantId)) return "";
                       refreshTokenRepository
-                          .findByJti(jti)
+                          .findByTenantIdAndJti(tokenTenantId, jti)
                           .ifPresent(
                               rt -> {
                                 rt.setRevoked(true);
                                 refreshTokenRepository.save(rt);
                               });
-                      return jwtService.getUserId(token); // Extract userId
+                      return tokenTenantId + "|" + jwtService.getUserId(token);
                     }
                   } catch (JwtException ignored) {
                   }
@@ -277,13 +304,14 @@ public class AuthController {
                 })
             .orElse("");
 
-    log.info("userId: " + userId);
+    log.info("Refresh-token owner found: {}", !tokenOwner.isBlank());
 
-    if (userId.isBlank()) {
+    if (tokenOwner.isBlank()) {
       throw new IllegalArgumentException("User not identified.");
     }
 
-    authService.revokeAllUserSessions(userId);
+    String[] ownerParts = tokenOwner.split("\\|", 2);
+    authService.revokeAllUserSessions(ownerParts[0], ownerParts[1]);
 
     // Use CookieUtil (same behavior)
     cookieService.clearRefreshCookie(response);

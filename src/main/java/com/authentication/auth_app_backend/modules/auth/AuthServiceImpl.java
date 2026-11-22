@@ -27,8 +27,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   @Transactional
-  public void revokeAllUserSessions(String userId) {
-    List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndRevokedFalse(userId);
+  public void revokeAllUserSessions(String tenantId, String userId) {
+    List<RefreshToken> activeTokens =
+        refreshTokenRepository.findByTenantIdAndUserIdAndRevokedFalse(tenantId, userId);
 
     if (activeTokens.isEmpty()) {
       throw new ResourceNotFoundException("No active sessions found.");

@@ -6,9 +6,18 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface UserRepository extends MongoRepository<User, String> {
 
-  Optional<User> findByEmail(String email);
+  Optional<User> findByTenantIdAndEmail(String tenantId, String email);
 
-  boolean existsByEmail(String email);
+  Optional<User> findByTenantIdAndId(String tenantId, String id);
 
-  List<User> findByRolesContaining(String role);
+  boolean existsByTenantIdAndEmail(String tenantId, String email);
+
+  List<User> findAllByTenantId(String tenantId);
+
+  List<User> findByTenantIdAndRolesContaining(String tenantId, String role);
+
+  Optional<User> findByTenantIdAndProviderAndProviderId(
+      String tenantId,
+      com.authentication.auth_app_backend.modules.user.enums.Provider provider,
+      String providerId);
 }

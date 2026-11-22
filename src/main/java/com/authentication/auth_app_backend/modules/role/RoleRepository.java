@@ -7,11 +7,15 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface RoleRepository extends MongoRepository<Role, String> {
 
-  Optional<Role> findByName(String name);
+  Optional<Role> findByTenantIdAndName(String tenantId, String name);
 
-  Optional<Role> findByIdentifier(String identifier);
+  Optional<Role> findByTenantIdAndIdentifier(String tenantId, String identifier);
 
-  List<Role> findByIdentifierIn(Collection<String> identifiers);
+  Optional<Role> findByTenantIdAndId(String tenantId, String id);
 
-  boolean existsByIdentifier(String identifier);
+  List<Role> findByTenantIdAndIdentifierIn(String tenantId, Collection<String> identifiers);
+
+  boolean existsByTenantIdAndIdentifier(String tenantId, String identifier);
+
+  List<Role> findAllByTenantId(String tenantId);
 }

@@ -3,6 +3,8 @@ package com.authentication.auth_app_backend.security;
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshToken;
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
 import com.authentication.auth_app_backend.modules.role.enums.UserRole;
+import com.authentication.auth_app_backend.modules.tenant.TenantRepository;
+import com.authentication.auth_app_backend.modules.tenant.enums.TenantStatusEnum;
 import com.authentication.auth_app_backend.modules.user.User;
 import com.authentication.auth_app_backend.modules.user.UserRepository;
 import com.authentication.auth_app_backend.modules.user.enums.Provider;
@@ -25,6 +27,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   private final JwtService jwtService;
   private final CookieService cookieService;
   private final RefreshTokenRepository refreshTokenRepository;
+  private final TenantRepository tenantRepository;
 
   @Value("${app.auth.frontend.success-redirect}")
   private String frontEndSuccessUrl;
@@ -44,8 +48,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
   public void onAuthenticationSuccess(
       HttpServletRequest request, HttpServletResponse response, Authentication authentication)
       throws IOException, ServletException {
-    logger.info("Successful authentication");
-    logger.info(authentication.toString());
+    String tenantId = TenantContext.getTenantId();
+    if (TenantContext.SYSTEM_TENANT_ID.equals(tenantId)
+        || tenantRepository
+            .findByTenantCodeIgnoreCase(tenantId)
+            .map(t -> t.getStatus() != TenantStatusEnum.ACTIVE)
+            .orElse(true)) {
+      throw new IllegalArgumentException("OAuth sign-in is unavailable for the SYSTEM tenant.");
+    }
 
     OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
@@ -56,29 +66,35 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       registrationId = token.getAuthorizedClientRegistrationId();
     }
 
-    logger.info("registrationId: " + registrationId);
-    logger.info("user: " + oAuth2User.getAttributes().toString());
+    logger.info("OAuth authentication completed for provider {}", registrationId);
 
     User user;
     switch (registrationId) {
       case "google" -> {
         String googleId = oAuth2User.getAttributes().getOrDefault("sub", "").toString();
         String email = oAuth2User.getAttributes().getOrDefault("email", "").toString();
+        String normalizedEmail = email.trim().toLowerCase();
+        rejectReservedSudoEmail(normalizedEmail);
         String name = oAuth2User.getAttributes().getOrDefault("name", "").toString();
         String picture = oAuth2User.getAttributes().getOrDefault("picture", "").toString();
         User newUser =
             User.builder()
-                .email(email)
+                .email(normalizedEmail)
+                .id(UUID.randomUUID().toString())
+                .tenantId(tenantId)
                 .name(name)
                 .image(picture)
                 .enable(true)
                 .provider(Provider.GOOGLE)
                 .providerId(googleId)
-                .roles(Set.of(UserRole.GUEST.name()))
+                .roles(Set.of(UserRole.USER.name()))
                 .status(UserStatusEnum.ACTIVE)
                 .build();
 
-        user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(newUser));
+        user =
+            userRepository
+                .findByTenantIdAndEmail(tenantId, normalizedEmail)
+                .orElseGet(() -> userRepository.save(newUser));
       }
 
       case "github" -> {
@@ -90,20 +106,27 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         if (email == null) {
           email = name + "@github.com";
         }
+        String normalizedEmail = email.trim().toLowerCase();
+        rejectReservedSudoEmail(normalizedEmail);
 
         User newUser =
             User.builder()
-                .email(email)
+                .email(normalizedEmail)
+                .id(UUID.randomUUID().toString())
+                .tenantId(tenantId)
                 .name(name)
                 .image(picture)
                 .enable(true)
                 .provider(Provider.GITHUB)
                 .providerId(githubId)
-                .roles(Set.of(UserRole.GUEST.name()))
+                .roles(Set.of(UserRole.USER.name()))
                 .status(UserStatusEnum.ACTIVE)
                 .build();
 
-        user = userRepository.findByEmail(email).orElseGet(() -> userRepository.save(newUser));
+        user =
+            userRepository
+                .findByTenantIdAndEmail(tenantId, normalizedEmail)
+                .orElseGet(() -> userRepository.save(newUser));
       }
 
       default -> {
@@ -121,6 +144,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         RefreshToken.builder()
             .id(UUID.randomUUID().toString())
             .jti(jti)
+            .tenantId(tenantId)
             .userId(user.getId())
             .revoked(false)
             .createdAt(new Date())
@@ -128,13 +152,23 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             .build();
 
     refreshTokenRepository.save(refreshTokenOb);
-    String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user, refreshTokenOb.getJti());
 
     cookieService.attachRefreshCookie(
         response, refreshToken, (int) jwtService.getRefreshTtlSeconds());
 
     //    response.getWriter().write("Login successful");
-    response.sendRedirect(frontEndSuccessUrl);
+    response.sendRedirect(
+        UriComponentsBuilder.fromUriString(frontEndSuccessUrl)
+            .queryParam("tenantId", tenantId)
+            .build()
+            .encode()
+            .toUriString());
+  }
+
+  private static void rejectReservedSudoEmail(String email) {
+    if (TenantContext.SUDO_ADMIN_EMAIL.equalsIgnoreCase(email)) {
+      throw new IllegalArgumentException("The reserved SUDO_ADMIN email cannot be used for OAuth.");
+    }
   }
 }

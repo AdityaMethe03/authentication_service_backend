@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "refresh_tokens")
 public class RefreshToken {
   @Id private String id;
+  private String tenantId;
   private String jti;
   private String userId;
   private Date createdAt;
