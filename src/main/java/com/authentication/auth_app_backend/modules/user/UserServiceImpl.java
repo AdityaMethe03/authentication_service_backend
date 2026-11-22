@@ -1,5 +1,6 @@
 package com.authentication.auth_app_backend.modules.user;
 
+import com.authentication.auth_app_backend.common.exceptions.ResourceConflictException;
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.auth.refreshtoken.RefreshTokenRepository;
 import com.authentication.auth_app_backend.modules.role.Role;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,11 +42,11 @@ public class UserServiceImpl implements UserService {
             .findByTenantCodeIgnoreCase(tenantId)
             .orElseThrow(() -> new ResourceNotFoundException("Tenant was not found."));
     if (tenant.getStatus() != TenantStatusEnum.ACTIVE) {
-      throw new IllegalArgumentException("Users cannot be created in an inactive tenant.");
+      throw new AccessDeniedException("Users cannot be managed in an inactive tenant.");
     }
     boolean platformAdmin = TenantContext.isPlatformAdmin();
     if (TenantContext.SYSTEM_TENANT_ID.equals(tenantId) && !platformAdmin) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can create users in SYSTEM.");
+      throw new AccessDeniedException("Only the platform administrator can manage SYSTEM users.");
     }
     if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
       throw new IllegalArgumentException("Email is required");
@@ -56,7 +58,7 @@ public class UserServiceImpl implements UserService {
           "The reserved SUDO_ADMIN email cannot be registered or assigned to another user.");
     }
     if (userRepository.existsByTenantIdAndEmail(tenantId, email)) {
-      throw new IllegalArgumentException("User with given email already exists.");
+      throw new ResourceConflictException("An account with that email already exists.");
     }
 
     User user = modelMapper.map(userDto, User.class);
@@ -130,16 +132,16 @@ public class UserServiceImpl implements UserService {
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
     if (existingUser.getRoles() != null
         && existingUser.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
-      throw new IllegalArgumentException("The SUDO_ADMIN user's account cannot be changed here.");
+      throw new AccessDeniedException("The platform administrator account cannot be changed here.");
     }
     if (TenantContext.SUDO_ADMIN_EMAIL.equalsIgnoreCase(existingUser.getEmail())) {
-      throw new IllegalArgumentException(
-          "The reserved SUDO_ADMIN user's account cannot be changed.");
+      throw new AccessDeniedException("The platform administrator account cannot be changed here.");
     }
     if (!TenantContext.isPlatformAdmin()
         && existingUser.getRoles() != null
         && existingUser.getRoles().contains(UserRole.SYS_ADMIN.name())) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can change a SYS_ADMIN account.");
+      throw new AccessDeniedException(
+          "Only the platform administrator can change a tenant administrator account.");
     }
     existingUser.setName(userDto.getName());
     existingUser.setProvider(userDto.getProvider());
@@ -163,11 +165,10 @@ public class UserServiceImpl implements UserService {
 
     if (existingUser.getRoles() != null
         && existingUser.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
-      throw new IllegalArgumentException("The SUDO_ADMIN user's account cannot be changed.");
+      throw new AccessDeniedException("The platform administrator account cannot be changed here.");
     }
     if (TenantContext.SUDO_ADMIN_EMAIL.equalsIgnoreCase(existingUser.getEmail())) {
-      throw new IllegalArgumentException(
-          "The reserved SUDO_ADMIN user's account cannot be changed.");
+      throw new AccessDeniedException("The platform administrator account cannot be changed here.");
     }
     if (userDto.getRoles() == null || userDto.getRoles().isEmpty()) {
       throw new IllegalArgumentException("At least one role must be assigned.");
@@ -177,13 +178,15 @@ public class UserServiceImpl implements UserService {
     }
     if (userDto.getRoles().contains(UserRole.SYS_ADMIN.name())
         && !TenantContext.isPlatformAdmin()) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can assign SYS_ADMIN.");
+      throw new AccessDeniedException(
+          "Only the platform administrator can assign tenant administrator access.");
     }
     if (!TenantContext.isPlatformAdmin()
         && existingUser.getRoles() != null
         && existingUser.getRoles().contains(UserRole.SYS_ADMIN.name())
         && !userDto.getRoles().contains(UserRole.SYS_ADMIN.name())) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can change a SYS_ADMIN account's role.");
+      throw new AccessDeniedException(
+          "Only the platform administrator can change a tenant administrator's role.");
     }
 
     var roles = roleRepository.findByTenantIdAndIdentifierIn(tenantId, userDto.getRoles());
@@ -213,15 +216,16 @@ public class UserServiceImpl implements UserService {
             .findByTenantIdAndId(tenantId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("User with given id does not exist."));
     if (user.getRoles() != null && user.getRoles().contains(UserRole.SUDO_ADMIN.name())) {
-      throw new IllegalArgumentException("The SUDO_ADMIN account cannot be deleted.");
+      throw new AccessDeniedException("The platform administrator account cannot be deleted.");
     }
     if (TenantContext.SUDO_ADMIN_EMAIL.equalsIgnoreCase(user.getEmail())) {
-      throw new IllegalArgumentException("The reserved SUDO_ADMIN account cannot be deleted.");
+      throw new AccessDeniedException("The platform administrator account cannot be deleted.");
     }
     if (!TenantContext.isPlatformAdmin()
         && user.getRoles() != null
         && user.getRoles().contains(UserRole.SYS_ADMIN.name())) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can delete a SYS_ADMIN account.");
+      throw new AccessDeniedException(
+          "Only the platform administrator can delete a tenant administrator account.");
     }
     refreshTokenRepository.deleteByTenantIdAndUserId(tenantId, userId);
     userRepository.delete(user);
@@ -311,9 +315,12 @@ public class UserServiceImpl implements UserService {
       User actor =
           userRepository
               .findByTenantIdAndId(tenantId, actorId)
-              .orElseThrow(() -> new IllegalArgumentException("Only SYS_ADMIN can create admins."));
+              .orElseThrow(
+                  () ->
+                      new AccessDeniedException(
+                          "Only a tenant administrator can create administrators."));
       if (actor.getRoles() == null || !actor.getRoles().contains(UserRole.SYS_ADMIN.name())) {
-        throw new IllegalArgumentException("Only SYS_ADMIN can create admins.");
+        throw new AccessDeniedException("Only a tenant administrator can create administrators.");
       }
     }
     if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
@@ -326,7 +333,7 @@ public class UserServiceImpl implements UserService {
           "The reserved SUDO_ADMIN email cannot be registered or assigned to another user.");
     }
     if (userRepository.existsByTenantIdAndEmail(tenantId, email)) {
-      throw new IllegalArgumentException("User with given email already exists.");
+      throw new ResourceConflictException("An account with that email already exists.");
     }
 
     Role role =

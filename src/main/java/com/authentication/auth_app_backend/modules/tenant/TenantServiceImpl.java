@@ -1,5 +1,6 @@
 package com.authentication.auth_app_backend.modules.tenant;
 
+import com.authentication.auth_app_backend.common.exceptions.ResourceConflictException;
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.Permission;
 import com.authentication.auth_app_backend.modules.role.Role;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,10 +34,10 @@ public class TenantServiceImpl implements TenantService {
   @Transactional
   public TenantResponseDto registerTenant(TenantRegistrationDto registration) {
     if (!TenantContext.SYSTEM_TENANT_ID.equals(TenantContext.getTenantId())) {
-      throw new IllegalArgumentException("Tenants can only be created from the SYSTEM scope.");
+      throw new AccessDeniedException("Only the platform administrator can manage tenants.");
     }
     if (!TenantContext.isPlatformAdmin()) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN can create a tenant.");
+      throw new AccessDeniedException("Only the platform administrator can manage tenants.");
     }
 
     String tenantCode = registration.getTenantCode().trim().toLowerCase();
@@ -47,7 +49,7 @@ public class TenantServiceImpl implements TenantService {
       throw new IllegalArgumentException("SYSTEM is a reserved tenant code.");
     }
     if (tenantRepository.existsByTenantCodeIgnoreCase(tenantCode)) {
-      throw new IllegalArgumentException("Tenant code already exists.");
+      throw new ResourceConflictException("That tenant code is already in use.");
     }
 
     // The UUID identifies the tenant document; the immutable code scopes tenant-owned data.
@@ -83,7 +85,7 @@ public class TenantServiceImpl implements TenantService {
   @Transactional(readOnly = true)
   public Iterable<TenantResponseDto> getAllTenants() {
     if (!TenantContext.SYSTEM_TENANT_ID.equals(TenantContext.getTenantId())) {
-      throw new IllegalArgumentException("Tenants can only be listed from the SYSTEM scope.");
+      throw new AccessDeniedException("Only the platform administrator can view tenants.");
     }
     return tenantRepository.findAllByOrderByNameAsc().stream()
         .map(
@@ -106,14 +108,14 @@ public class TenantServiceImpl implements TenantService {
   public TenantResponseDto updateTenant(TenantUpdateDto update, String tenantCode) {
     if (!TenantContext.SYSTEM_TENANT_ID.equals(TenantContext.getTenantId())
         || !TenantContext.isPlatformAdmin()) {
-      throw new IllegalArgumentException("Only SUDO_ADMIN in SYSTEM can update tenants.");
+      throw new AccessDeniedException("Only the platform administrator can manage tenants.");
     }
     Tenant tenant =
         tenantRepository
             .findByTenantCodeIgnoreCase(tenantCode)
             .orElseThrow(() -> new ResourceNotFoundException("Tenant was not found."));
     if (TenantContext.SYSTEM_TENANT_ID.equals(tenant.getTenantCode())) {
-      throw new IllegalArgumentException("The SYSTEM tenant cannot be changed.");
+      throw new AccessDeniedException("The SYSTEM tenant cannot be changed.");
     }
     tenant.setName(update.getName().trim());
     tenant.setStatus(update.getStatus());
@@ -148,8 +150,7 @@ public class TenantServiceImpl implements TenantService {
             PermissionType.WRITE,
             PermissionType.UPDATE,
             ApplicationEntityType.ROLE,
-            PermissionType.READ,
-            PermissionType.UPDATE));
+            PermissionType.READ));
     createSystemRole(tenantId, UserRole.USER.name(), Set.of());
   }
 

@@ -134,6 +134,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
       }
     }
 
+    if (!user.isEnabled()) {
+      throw new IllegalArgumentException("User is not active.");
+    }
+
     // jwt token - redirect to frontend with token
 
     //    user --> revoke all refresh tokens

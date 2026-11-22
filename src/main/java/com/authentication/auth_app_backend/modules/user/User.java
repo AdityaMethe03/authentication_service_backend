@@ -63,6 +63,6 @@ public class User implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return this.enable;
+    return this.enable && this.status == UserStatusEnum.ACTIVE;
   }
 }

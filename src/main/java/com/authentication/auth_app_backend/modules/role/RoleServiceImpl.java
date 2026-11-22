@@ -1,5 +1,6 @@
 package com.authentication.auth_app_backend.modules.role;
 
+import com.authentication.auth_app_backend.common.exceptions.ResourceConflictException;
 import com.authentication.auth_app_backend.common.exceptions.ResourceNotFoundException;
 import com.authentication.auth_app_backend.modules.role.dto.RoleDto;
 import com.authentication.auth_app_backend.modules.role.enums.RoleStatusEnum;
@@ -12,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,14 +38,14 @@ public class RoleServiceImpl implements RoleService {
     }
     validateSudoAdminRoleScope(tenantId, roleDto.getIdentifier());
     if (roleRepository.existsByTenantIdAndIdentifier(tenantId, roleDto.getIdentifier())) {
-      throw new IllegalArgumentException("Role identifier already exists.");
+      throw new ResourceConflictException("That role identifier is already in use.");
     }
 
     roleRepository
         .findByTenantIdAndName(tenantId, roleDto.getName())
         .ifPresent(
             role -> {
-              throw new IllegalArgumentException("Role with given name already exists.");
+              throw new ResourceConflictException("A role with that name already exists.");
             });
 
     Role role = modelMapper.map(roleDto, Role.class);
@@ -73,12 +75,12 @@ public class RoleServiceImpl implements RoleService {
     validateSudoAdminRoleScope(tenantId, roleDto.getIdentifier(), existingRole.getIdentifier());
 
     if ("SUDO_ADMIN".equals(existingRole.getIdentifier())) {
-      throw new IllegalArgumentException("The SUDO_ADMIN role cannot be changed.");
+      throw new AccessDeniedException("The platform administrator role cannot be changed.");
     }
     if (Boolean.TRUE.equals(existingRole.getIsSystem())
         && (!java.util.Objects.equals(existingRole.getName(), roleDto.getName())
             || !java.util.Objects.equals(existingRole.getStatus(), roleDto.getStatus()))) {
-      throw new IllegalArgumentException("The name and status of system roles cannot be changed.");
+      throw new AccessDeniedException("The name and status of system roles cannot be changed.");
     }
 
     roleRepository
@@ -86,7 +88,7 @@ public class RoleServiceImpl implements RoleService {
         .filter(role -> !role.getId().equals(roleId))
         .ifPresent(
             role -> {
-              throw new IllegalArgumentException("Role with given name already exists.");
+              throw new ResourceConflictException("A role with that name already exists.");
             });
 
     existingRole.setName(roleDto.getName());
@@ -113,7 +115,7 @@ public class RoleServiceImpl implements RoleService {
     validateSudoAdminRoleScope(tenantId, role.getIdentifier());
 
     if (Boolean.TRUE.equals(role.getIsSystem())) {
-      throw new IllegalArgumentException("System roles cannot be deleted.");
+      throw new AccessDeniedException("System roles cannot be deleted.");
     }
 
     List<User> users =
@@ -156,7 +158,7 @@ public class RoleServiceImpl implements RoleService {
     validateSudoAdminRoleScope(tenantId, existingRole.getIdentifier());
 
     if (Boolean.TRUE.equals(existingRole.getIsSystem())) {
-      throw new IllegalArgumentException("The status of system roles cannot be changed.");
+      throw new AccessDeniedException("The status of system roles cannot be changed.");
     }
 
     existingRole.setStatus(status);
@@ -171,8 +173,8 @@ public class RoleServiceImpl implements RoleService {
             .filter(java.util.Objects::nonNull)
             .anyMatch(value -> UserRole.SUDO_ADMIN.name().equalsIgnoreCase(value.trim()));
     if (sudoAdminRole && !TenantContext.SYSTEM_TENANT_ID.equals(tenantId)) {
-      throw new IllegalArgumentException(
-          "The SUDO_ADMIN role can only exist in the SYSTEM tenant.");
+      throw new AccessDeniedException(
+          "The platform administrator role can only exist in the SYSTEM tenant.");
     }
   }
 }

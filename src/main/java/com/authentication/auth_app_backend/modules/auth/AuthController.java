@@ -19,6 +19,7 @@ import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.*;
 import lombok.AllArgsConstructor;
@@ -32,6 +33,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,7 +59,7 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<TokenResponse> login(
-      @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+      @Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
     // authenticate
     Authentication authenticate = authenticate(loginRequest);
     String tenantId = TenantContext.getTenantId();
@@ -69,8 +71,8 @@ public class AuthController {
         userRepository
             .findByTenantIdAndEmail(tenantId, loginRequest.email().trim().toLowerCase())
             .orElseThrow(() -> new BadCredentialsException("Invalid Username or Password."));
-    if (!user.isEnable()) {
-      throw new DisabledException("User is disabled");
+    if (!user.isEnabled()) {
+      throw new DisabledException("User is not active");
     }
 
     String jti = UUID.randomUUID().toString();
@@ -111,9 +113,8 @@ public class AuthController {
     try {
       return authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password()));
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new BadCredentialsException("Invalid Username or Password.");
+    } catch (AuthenticationException exception) {
+      throw new BadCredentialsException("Authentication failed!");
     }
   }
 
@@ -155,6 +156,10 @@ public class AuthController {
         userRepository
             .findByTenantIdAndId(tokenTenantId, storedRefreshToken.getUserId())
             .orElseThrow(() -> new BadCredentialsException("User not found."));
+
+    if (!storedUser.isEnabled()) {
+      throw new BadCredentialsException("User is not active.");
+    }
 
     if (storedRefreshToken.isRevoked()) {
       throw new BadCredentialsException("Refresh Token Expired or Revoked");

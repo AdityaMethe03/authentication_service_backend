@@ -64,8 +64,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (!authenticatedTenantId.equals(TenantContext.getTenantId()) && !isPlatformAdmin) {
           throw new JwtException("Token tenant does not match request tenant.");
         }
-        if (!user.isEnable()) {
-          throw new JwtException("User is disabled.");
+        if (!user.isEnabled()) {
+          throw new JwtException("User is not active.");
         }
 
         List<GrantedAuthority> authorities =

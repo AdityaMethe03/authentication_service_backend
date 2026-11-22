@@ -1,6 +1,6 @@
 package com.authentication.auth_app_backend.security.config;
 
-import com.authentication.auth_app_backend.common.dtos.ApiError;
+import com.authentication.auth_app_backend.common.dtos.ApiErrorDto;
 import com.authentication.auth_app_backend.config.SecurityUrls;
 import com.authentication.auth_app_backend.security.JwtAuthenticationFilter;
 import com.authentication.auth_app_backend.security.OAuth2SuccessHandler;
@@ -8,7 +8,6 @@ import com.authentication.auth_app_backend.security.TenantContextFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Arrays;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
@@ -57,35 +56,28 @@ public class SecurityConfig {
             ex ->
                 ex.authenticationEntryPoint(
                         (request, response, e) -> {
-                          response.setStatus(401);
-                          response.setContentType("application/json");
-                          String message =
-                              Optional.ofNullable((String) request.getAttribute("error"))
-                                  .orElse("Unauthorized Access! " + e.getMessage());
                           var apiError =
-                              ApiError.of(
-                                  HttpStatus.UNAUTHORIZED.value(),
-                                  "Unauthorized Access!",
-                                  message,
+                              ApiErrorDto.of(
+                                  HttpStatus.UNAUTHORIZED,
+                                  "SESSION_UNAUTHORIZED",
+                                  "Your session is invalid or has expired. Please sign in again.",
                                   request.getRequestURI());
+                          response.setStatus(apiError.status());
+                          response.setContentType("application/problem+json");
+                          response.setHeader("X-Request-Id", apiError.requestId());
                           response.getWriter().write(objectMapper.writeValueAsString(apiError));
                         })
                     .accessDeniedHandler(
                         ((request, response, e) -> {
-                          response.setStatus(403);
-                          response.setContentType("application/json");
-                          String message = e.getMessage();
-                          String error = (String) request.getAttribute("error");
-                          if (error != null) {
-                            message = error;
-                          }
                           var apiError =
-                              ApiError.of(
-                                  HttpStatus.FORBIDDEN.value(),
-                                  "Forbidden Access!",
-                                  message,
-                                  request.getRequestURI(),
-                                  true);
+                              ApiErrorDto.of(
+                                  HttpStatus.FORBIDDEN,
+                                  "ACCESS_DENIED",
+                                  "You don't have permission to perform this action.",
+                                  request.getRequestURI());
+                          response.setStatus(apiError.status());
+                          response.setContentType("application/problem+json");
+                          response.setHeader("X-Request-Id", apiError.requestId());
                           response.getWriter().write(objectMapper.writeValueAsString(apiError));
                         })))
         .addFilterBefore(tenantContextFilter, UsernamePasswordAuthenticationFilter.class)
